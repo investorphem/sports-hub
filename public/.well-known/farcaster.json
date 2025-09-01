@@ -1,26 +1,24 @@
 {
   "name": "Sports Hub",
-  "iconUrl": "https://sports-hub.vercel.app/icon.png",
+  "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
   "subtitle": "Live Football Scores & Fixtures",
-  "description": "Stay updated with real-time football scores and upcoming fixtures in one hub.",
-  "primaryCategory": "games",
-  "screenshotUrls": ["https://sports-hub.vercel.app/screenshot1.png"],
-  "imageUrl": "https://sports-hub.vercel.app/preview.png",
-  "heroImageUrl": "https://sports-hub.vercel.app/hero.png",
-  "splashImageUrl": "https://sports-hub.vercel.app/splash.png",
-  "splashBackgroundColor": "#0066cc",
-  "tags": ["football", "sports", "live scores", "fixtures"],
-  "tagline": "Your hub for football action.",
-  "buttonTitle": "Open Sports Hub",
+  "description": "Check live football scores and upcoming fixtures instantly.",
+  "primaryCategory": "sports",
+  "screenshotUrls": [
+    "https://sports-hub-three.vercel.app/screenshot1.png"
+  ],
+  "imageUrl": "https://sports-hub-three.vercel.app/preview.png",
+  "heroImageUrl": "https://sports-hub-three.vercel.app/hero.png",
+  "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
+  "splashBackgroundColor": "#1E90FF",
+  "tags": ["sports", "football", "live", "fixtures"],
+  "tagline": "Your go-to place for football updates",
+  "buttonTitle": "Open App",
   "ogTitle": "Sports Hub",
-  "ogDescription": "Check live football scores & fixtures directly on Farcaster.",
-  "ogImageUrl": "https://sports-hub.vercel.app/share.png",
-  "castShareUrl": "https://sports-hub.vercel.app/",
-  "homeUrl": "https://sports-hub.vercel.app/",
+  "ogDescription": "Stay updated with live football scores & fixtures.",
+  "ogImageUrl": "https://sports-hub-three.vercel.app/share.png",
+  "castShareUrl": "https://sports-hub-three.vercel.app/",
+  "homeUrl": "https://sports-hub-three.vercel.app/",
   "webhookUrl": "",
   "accountAssociation": {
-    "type": "farcaster",
-    "fid": 219059,
-    "username": "investorphem"
-  }
-}
+    "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ
