@@ -1,0 +1,26 @@
+{
+  "name": "Sports Hub",
+  "iconUrl": "https://sports-hub.vercel.app/icon.png",
+  "subtitle": "Live Football Scores & Fixtures",
+  "description": "Stay updated with real-time football scores and upcoming fixtures in one hub.",
+  "primaryCategory": "games",
+  "screenshotUrls": ["https://sports-hub.vercel.app/screenshot1.png"],
+  "imageUrl": "https://sports-hub.vercel.app/preview.png",
+  "heroImageUrl": "https://sports-hub.vercel.app/hero.png",
+  "splashImageUrl": "https://sports-hub.vercel.app/splash.png",
+  "splashBackgroundColor": "#0066cc",
+  "tags": ["football", "sports", "live scores", "fixtures"],
+  "tagline": "Your hub for football action.",
+  "buttonTitle": "Open Sports Hub",
+  "ogTitle": "Sports Hub",
+  "ogDescription": "Check live football scores & fixtures directly on Farcaster.",
+  "ogImageUrl": "https://sports-hub.vercel.app/share.png",
+  "castShareUrl": "https://sports-hub.vercel.app/",
+  "homeUrl": "https://sports-hub.vercel.app/",
+  "webhookUrl": "",
+  "accountAssociation": {
+    "type": "farcaster",
+    "fid": 219059,
+    "username": "investorphem"
+  }
+}
