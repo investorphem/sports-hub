@@ -2,7 +2,7 @@
   "name": "Sports Hub",
   "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
   "subtitle": "Live Football Scores & Fixtures",
-  "description": "Check live football scores and upcoming fixtures in one hub.",
+  "description": "Check live football scores and upcoming fixtures instantly.",
   "primaryCategory": "sports",
   "screenshotUrls": [
     "https://sports-hub-three.vercel.app/screenshot1.png"
@@ -10,19 +10,19 @@
   "imageUrl": "https://sports-hub-three.vercel.app/preview.png",
   "heroImageUrl": "https://sports-hub-three.vercel.app/hero.png",
   "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
-  "splashBackgroundColor": "#1E3A8A",
-  "tags": ["football", "sports", "live", "fixtures"],
-  "tagline": "Your live football companion",
+  "splashBackgroundColor": "#1E90FF",
+  "tags": ["sports", "football", "live", "fixtures"],
+  "tagline": "Your go-to place for football updates",
   "buttonTitle": "Open App",
   "ogTitle": "Sports Hub",
-  "ogDescription": "Follow live football scores and upcoming fixtures, right inside Farcaster.",
+  "ogDescription": "Stay updated with live football scores & fixtures.",
   "ogImageUrl": "https://sports-hub-three.vercel.app/share.png",
   "castShareUrl": "https://sports-hub-three.vercel.app/",
   "homeUrl": "https://sports-hub-three.vercel.app/",
   "webhookUrl": "",
   "accountAssociation": {
-    "type": "farcaster",
-    "fid": 219059,
-    "username": "investorphem"
+    "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ",
+    "payload": "eyJkb21haW4iOiJzcG9ydHMtaHViLXRocmVlLnZlcmNlbC5hcHAifQ",
+    "signature": "MHgwNzc3MjBhMjcwNjY0MWEyNDNlNTM2YzgxYzNmZDU5YjgwYWJiZmJiNGIxNTMxZWU3ZDk1N2IzYWQzMmM3ZTIyNWJkMTIzZDMwNmRhOTcxZjE2NzdiZmMzMjY3NmFjZWUzZmY1OTdjNWFmY2EyODk2MTg4ZmRkOWRkMjVkNWU5YzFi"
   }
 }
