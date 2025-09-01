@@ -1,4 +1,5 @@
 {
+  "type": "miniApp"
   "name": "Sports Hub",
   "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
   "subtitle": "Live Football Scores & Fixtures",
