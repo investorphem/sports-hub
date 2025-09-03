@@ -16,8 +16,27 @@
       text-align: center;
       color: #4B0082;
     }
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    select, input, button {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #4B0082;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #360062;
+    }
     #matches {
-      margin-top: 20px;
       display: grid;
       gap: 15px;
     }
@@ -36,6 +55,18 @@
 </head>
 <body>
   <h1>⚽ Sports Hub</h1>
+
+  <!-- Filters -->
+  <div class="filters">
+    <select id="competition">
+      <option value="2021">Premier League</option>
+      <option value="2016">Championship</option>
+    </select>
+    <input type="date" id="dateFrom" />
+    <input type="date" id="dateTo" />
+    <button id="loadBtn">Load Matches</button>
+  </div>
+
   <div id="matches" class="loading">Loading matches...</div>
 
   <!-- Farcaster SDK -->
@@ -44,9 +75,21 @@
 
     async function loadMatches() {
       const container = document.getElementById("matches");
+      container.innerHTML = "Loading...";
+      container.classList.add("loading");
+
+      const competition = document.getElementById("competition").value;
+      const dateFrom = document.getElementById("dateFrom").value;
+      const dateTo = document.getElementById("dateTo").value;
+
       try {
-        // Call your API route
-        const res = await fetch("/api/football");
+        // Build query
+        let query = `competition=${competition}`;
+        if (dateFrom) query += `&dateFrom=${dateFrom}`;
+        if (dateTo) query += `&dateTo=${dateTo}`;
+
+        // Call your Vercel API route
+        const res = await fetch(`/api/football?${query}`);
         const data = await res.json();
 
         if (!data.matches || data.matches.length === 0) {
@@ -61,19 +104,4 @@
             Status: ${match.status}<br/>
             Date: ${new Date(match.utcDate).toLocaleString()}
           </div>
-        `).join("");
-      } catch (err) {
-        container.innerHTML = "<p>Error loading matches.</p>";
-        console.error(err);
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      await loadMatches();
-
-      // 👇 Tell Farcaster we are ready to show the app inside miniapp frame
-      await sdk.actions.ready();
-    });
-  </script>
-</body>
-</html>
+        `
