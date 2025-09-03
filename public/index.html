@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type="module">
+  import { sdk } from "https://esm.sh/@farcaster/miniapp-sdk";
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    // Your app initialization (fetch API, render UI, etc.)
+    
+    // When everything is loaded, tell Farcaster:
+    await sdk.actions.ready();
+  });
+</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sports Hub</title>
