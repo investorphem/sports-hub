@@ -1,34 +1,70 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sports Hub</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+    h1 { color: #2c3e50; }
+    select, input, button { margin: 5px; padding: 8px; }
+    .match { background: white; padding: 10px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body>
-  <header class="header">
-    <img src="/icon.png" alt="Sports Hub" class="icon" />
-    <div>
-      <h1>Sports Hub</h1>
-      <p class="muted">Live Football Scores & Fixtures</p>
-    </div>
-  </header>
+  <h1>⚽ Sports Hub</h1>
 
-  <main class="container">
-    <section>
-      <h2>Live Matches</h2>
-      <div id="live" class="list">Loading live matches…</div>
-    </section>
+  <label for="competition">Competition:</label>
+  <select id="competition">
+    <option value="2021">Premier League</option>
+    <option value="2016">Championship</option>
+  </select>
 
-    <section>
-      <h2>Today’s Fixtures</h2>
-      <div id="fixtures" class="list">Loading fixtures…</div>
-    </section>
-  </main>
+  <label for="dateFrom">From:</label>
+  <input type="date" id="dateFrom" />
 
-  <footer class="footer">Powered by Football-Data.org</footer>
+  <label for="dateTo">To:</label>
+  <input type="date" id="dateTo" />
 
-  <script src="script.js"></script>
+  <button onclick="loadMatches()">Get Matches</button>
+
+  <div id="matches"></div>
+
+  <script>
+    async function loadMatches() {
+      const competitionId = document.getElementById("competition").value;
+      const dateFrom = document.getElementById("dateFrom").value;
+      const dateTo = document.getElementById("dateTo").value;
+
+      let url = `/api/football?competitionId=${competitionId}`;
+      if (dateFrom) url += `&dateFrom=${dateFrom}`;
+      if (dateTo) url += `&dateTo=${dateTo}`;
+
+      document.getElementById("matches").innerHTML = "Loading...";
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const container = document.getElementById("matches");
+      container.innerHTML = "";
+
+      if (data.matches.length === 0) {
+        container.innerHTML = "<p>No matches found for this range.</p>";
+        return;
+      }
+
+      data.matches.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "match";
+        div.innerHTML = `
+          <strong>${m.competition.name}</strong><br>
+          ${m.homeTeam.name} vs ${m.awayTeam.name}<br>
+          Date: ${new Date(m.utcDate).toLocaleString()}<br>
+          Status: ${m.status}
+        `;
+        container.appendChild(div);
+      });
+    }
+  </script>
 </body>
 </html>
