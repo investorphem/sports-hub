@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sports Hub</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>⚽ Sports Hub</h1>
-    <p>Live Football Scores & Fixtures</p>
+  <header class="header">
+    <img src="/icon.png" alt="Sports Hub" class="icon" />
+    <div>
+      <h1>Sports Hub</h1>
+      <p class="muted">Live Football Scores & Fixtures</p>
+    </div>
   </header>
 
-  <main>
-    <section id="live-scores">
+  <main class="container">
+    <section>
       <h2>Live Matches</h2>
-      <div id="scores-container">Loading live scores...</div>
+      <div id="live" class="list">Loading live matches…</div>
     </section>
 
-    <section id="fixtures">
-      <h2>Upcoming Fixtures</h2>
-      <div id="fixtures-container">Loading fixtures...</div>
+    <section>
+      <h2>Today’s Fixtures</h2>
+      <div id="fixtures" class="list">Loading fixtures…</div>
     </section>
   </main>
+
+  <footer class="footer">Powered by Football-Data.org</footer>
 
   <script src="script.js"></script>
 </body>
