@@ -1,91 +1,107 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [competition, setCompetition] = useState("PL"); // PL = Premier League by default
+  const [error, setError] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [competition, setCompetition] = useState("PL"); // Default Premier League
 
-  // Fetch matches
-  const fetchMatches = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (dateFrom) params.append("dateFrom", dateFrom);
-      if (dateTo) params.append("dateTo", dateTo);
-      if (competition) params.append("competition", competition);
-
-      const res = await fetch(`/api/matches?${params.toString()}`);
-      const data = await res.json();
-
-      setMatches(data.matches || []);
-    } catch (err) {
-      console.error("Error fetching matches:", err);
-      setMatches([]);
-    }
-    setLoading(false);
-  };
-
-  // Fetch when filters change
   useEffect(() => {
-    fetchMatches();
-  }, [dateFrom, dateTo, competition]);
+    const fetchData = async () => {
+      if (!startDate || !endDate) return;
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/matches?competition=${competition}&startDate=${startDate}&endDate=${endDate}`
+        );
+        const data = await res.json();
+        setMatches(data.matches || []);
+      } catch (err) {
+        setError("Failed to fetch matches");
+      }
+      setLoading(false);
+
+      // ✅ Tell Farcaster the app is ready
+      sdk.actions.ready();
+    };
+
+    fetchData();
+  }, [competition, startDate, endDate]);
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>⚽ Sports Hub</h1>
-      <p>Live football scores & fixtures</p>
+    <div className="min-h-screen bg-gray-100 p-4">
+      {/* Header */}
+      <h1 className="text-2xl font-bold text-center text-indigo-700 mb-4">
+        ⚽ Sports Hub
+      </h1>
 
       {/* Filters */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>
-          From:{" "}
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-          />
-        </label>{" "}
-        <label>
-          To:{" "}
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-          />
-        </label>{" "}
-        <label>
-          Competition:{" "}
+      <div className="bg-white p-4 rounded-2xl shadow mb-4">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold">Competition</label>
           <select
             value={competition}
             onChange={(e) => setCompetition(e.target.value)}
+            className="border p-2 rounded-lg"
           >
             <option value="PL">Premier League</option>
             <option value="ELC">Championship</option>
           </select>
-        </label>
+
+          <label className="text-sm font-semibold mt-2">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border p-2 rounded-lg"
+          />
+
+          <label className="text-sm font-semibold mt-2">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border p-2 rounded-lg"
+          />
+        </div>
       </div>
 
-      {/* Match List */}
-      {loading ? (
-        <p>Loading matches...</p>
-      ) : matches.length === 0 ? (
-        <p>No matches found.</p>
-      ) : (
-        <ul>
+      {/* Matches */}
+      <div>
+        {loading && <p className="text-center">Loading matches...</p>}
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        {!loading && matches.length === 0 && (
+          <p className="text-center text-gray-500">No matches found</p>
+        )}
+
+        <div className="grid gap-4">
           {matches.map((match) => (
-            <li key={match.id}>
-              <strong>
-                {match.homeTeam?.name} vs {match.awayTeam?.name}
-              </strong>{" "}
-              <br />
-              {new Date(match.utcDate).toLocaleString()} –{" "}
-              {match.competition?.name}
-            </li>
+            <div
+              key={match.id}
+              className="bg-white p-4 rounded-2xl shadow flex justify-between items-center"
+            >
+              <div>
+                <p className="font-bold text-gray-800">
+                  {match.homeTeam.name} vs {match.awayTeam.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {new Date(match.utcDate).toLocaleString()}
+                </p>
+                <p className="text-xs text-indigo-600 mt-1">
+                  Status: {match.status}
+                </p>
+              </div>
+              <div className="text-xl font-bold text-indigo-700">
+                {match.score.fullTime.home ?? "-"} :{" "}
+                {match.score.fullTime.away ?? "-"}
+              </div>
+            </div>
           ))}
-        </ul>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
