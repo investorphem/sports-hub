@@ -1,33 +1,34 @@
-// pages/api/matches.js
 export default async function handler(req, res) {
-  const { from, to, competition } = req.query;
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY || "3f1cbd2315ee42188899deae4a6359a4";
 
-  // Default competitions → Premier League (PL) + Championship (ELC)
-  const comps = competition || "PL,ELC";
+  // Set date range: today → +7 days
+  const today = new Date().toISOString().split("T")[0];
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
 
   try {
-    const url = new URL("https://api.football-data.org/v4/matches");
-
-    if (from) url.searchParams.append("dateFrom", from);
-    if (to) url.searchParams.append("dateTo", to);
-    if (comps) url.searchParams.append("competitions", comps);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        "X-Auth-Token": process.env.FOOTBALL_DATA_API_KEY, // Securely stored in Vercel
-      },
-    });
+    const response = await fetch(
+      `https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${today}&dateTo=${nextWeek}`,
+      {
+        headers: { "X-Auth-Token": apiKey },
+      }
+    );
 
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: "Failed to fetch matches" });
+      throw new Error(`Football API error: ${response.status}`);
     }
 
     const data = await response.json();
-    res.status(200).json(data);
+
+    res.status(200).json({
+      matches: data.matches || [],
+    });
   } catch (error) {
-    console.error("API Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error(error);
+    res.status(500).json({
+      error: "Failed to fetch matches",
+      details: error.message,
+    });
   }
 }
