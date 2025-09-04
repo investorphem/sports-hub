@@ -1,87 +1,40 @@
-import { useState, useEffect } from "react";
+// pages/index.js
+import Head from "next/head";
+// ...your existing imports
 
 export default function Home() {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dateFrom, setDateFrom] = useState("2025-09-01");
-  const [dateTo, setDateTo] = useState("2025-09-07");
-  const [competition, setCompetition] = useState("PL"); // PL = Premier League
-
-  useEffect(() => {
-    async function fetchMatches() {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `/api/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&competition=${competition}`
-        );
-        const data = await res.json();
-        setMatches(data.matches || []);
-      } catch (err) {
-        console.error("Error fetching matches:", err);
+  const embed = {
+    version: "1",
+    imageUrl: "https://sports-hub-three.vercel.app/embed.png", // 3:2 image (e.g., 1200x800)
+    button: {
+      title: "Open Sports Hub",
+      action: {
+        type: "launch_miniapp",            // required for Mini Apps
+        url: "https://sports-hub-three.vercel.app/",
+        name: "Sports Hub",
+        splashImageUrl: "https://sports-hub-three.vercel.app/splash.png", // 200x200
+        splashBackgroundColor: "#0A1A2B"
       }
-      setLoading(false);
     }
-    fetchMatches();
-  }, [dateFrom, dateTo, competition]);
+  };
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
-      <h1>⚽ Sports Hub</h1>
-      <p>Live football scores + fixtures</p>
+    <>
+      <Head>
+        {/* Mini App embed (primary) */}
+        <meta name="fc:miniapp" content={JSON.stringify(embed)} />
+        {/* Back-compat for some clients */}
+        <meta name="fc:frame" content={JSON.stringify({
+          ...embed,
+          button: { ...embed.button, action: { ...embed.button.action, type: "launch_frame" } }
+        })} />
+        {/* Regular Open Graph (nice preview on web) */}
+        <meta property="og:title" content="Sports Hub" />
+        <meta property="og:description" content="Live football scores & fixtures." />
+        <meta property="og:image" content="https://sports-hub-three.vercel.app/share.png" />
+      </Head>
 
-      {/* Filters */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>
-          From:{" "}
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-          />
-        </label>
-        <label style={{ marginLeft: "10px" }}>
-          To:{" "}
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-          />
-        </label>
-        <label style={{ marginLeft: "10px" }}>
-          Competition:{" "}
-          <select
-            value={competition}
-            onChange={(e) => setCompetition(e.target.value)}
-          >
-            <option value="PL">Premier League</option>
-            <option value="ELC">Championship</option>
-            <option value="CL">Champions League</option>
-            <option value="PD">La Liga</option>
-            <option value="SA">Serie A</option>
-            <option value="BL1">Bundesliga</option>
-          </select>
-        </label>
-      </div>
-
-      {/* Matches */}
-      {loading ? (
-        <p>Loading matches...</p>
-      ) : matches.length > 0 ? (
-        <ul>
-          {matches.map((match) => (
-            <li key={match.id} style={{ marginBottom: "10px" }}>
-              <strong>
-                {match.homeTeam.name} vs {match.awayTeam.name}
-              </strong>{" "}
-              <br />
-              {new Date(match.utcDate).toLocaleString()} <br />
-              Status: {match.status}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No matches found for this range.</p>
-      )}
-    </div>
+      {/* ...your existing page UI */}
+    </>
   );
 }
