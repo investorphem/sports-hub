@@ -27,5 +27,10 @@
     "ogDescription": "Live football scores and fixtures",
     "ogImageUrl": "https://sports-hub-three.vercel.app/share.png",
     "castShareUrl": "https://sports-hub-three.vercel.app/"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ",
+    "payload": "eyJkb21haW4iOiJzcG9ydHMtaHViLXRocmVlLnZlcmNlbC5hcHAifQ",
+    "signature": "MHgwNzc3MjBhMjcwNjY0MWEyNDNlNTM2YzgxYzNmZDU5YjgwYWJiZmJiNGIxNTMxZWU3ZDk1N2IzYWQzMmM3ZTIyNWJkMTIzZDMwNmRhOTcxZjE2NzdiZmMzMjY3NmFjZWUzZmY1OTdjNWFmY2EyODk2MTg4ZmRkOWRkMjVkNWU5YzFi"
   }
 }
