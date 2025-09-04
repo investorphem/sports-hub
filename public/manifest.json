@@ -1,14 +1,15 @@
+anifest JSON
 {
   "frame": {
     "name": "Sports Hub",
     "version": "1",
-    "iconUrl": "https://https://sports-hub-three.vercel.app//icon.png",
-    "homeUrl": "https://https://sports-hub-three.vercel.app/",
-    "imageUrl": "https://https://sports-hub-three.vercel.app//image.png",
+    "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
+    "homeUrl": "https://sports-hub-three.vercel.app",
+    "imageUrl": "https://sports-hub-three.vercel.app/image.png",
     "buttonTitle": "Open App",
-    "splashImageUrl": "https://https://sports-hub-three.vercel.app//splash.png",
+    "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
     "splashBackgroundColor": "#4B0082",
-    "webhookUrl": "https://https://sports-hub-three.vercel.app//api/webhook",
+    "webhookUrl": "https://sports-hub-three.vercel.app/api/webhook",
     "subtitle": "Live football scores and fixtures",
     "description": "Premier League and Championship scores with date filters",
     "primaryCategory": "games",
