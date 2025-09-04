@@ -1,23 +1,25 @@
 {
-  "version": "1",
   "name": "Sports Hub",
-  "short_name": "SportsHub",
-  "subtitle": "Live football scores",
+  "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
+  "subtitle": "Live football scores and fixtures",
   "description": "Premier League and Championship scores with date filters",
-  "icons": [
-    {
-      "src": "/icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
+  "primaryCategory": "games",
+  "screenshotUrls": [
+    "https://sports-hub-three.vercel.app/screenshot1.png"
   ],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "type": "image/png",
-      "sizes": "1080x1920"
-    }
-  ],
+  "imageUrl": "https://sports-hub-three.vercel.app/preview.png",
+  "heroImageUrl": "https://sports-hub-three.vercel.app/hero.png",
+  "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
+  "splashBackgroundColor": "#4B0082",
+  "tags": ["football", "sports", "scores", "fixtures"],
+  "tagline": "Check football scores fast",
+  "buttonTitle": "Open App",
+  "ogTitle": "Sports Hub",
+  "ogDescription": "Live football scores and fixtures",
+  "ogImageUrl": "https://sports-hub-three.vercel.app/share.png",
+  "castShareUrl": "https://sports-hub-three.vercel.app/",
+  "homeUrl": "https://sports-hub-three.vercel.app/",
+  "webhookUrl": "",
   "accountAssociation": {
     "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ",
     "payload": "eyJkb21haW4iOiJzcG9ydHMtaHViLXRocmVlLnZlcmNlbC5hcHAifQ",
