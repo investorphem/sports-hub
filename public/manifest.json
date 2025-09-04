@@ -9,7 +9,7 @@
     "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
     "splashBackgroundColor": "#4B0082",
     "webhookUrl": "https://sports-hub-three.vercel.app/api/webhook",
-    "subtitle": "Live football scores and fixtures",
+    "subtitle": "Live football scores,fixtures",
     "description": "Premier League and Championship scores with date filters",
     "primaryCategory": "games",
     "screenshotUrls": [
