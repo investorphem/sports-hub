@@ -1,28 +1,25 @@
 {
-  "name": "Sports Hub",
-  "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
-  "subtitle": "Live football scores and fixtures",
-  "description": "Premier League and Championship scores with date filters",
-  "primaryCategory": "games",
-  "screenshotUrls": [
-    "https://sports-hub-three.vercel.app/screenshot1.png"
-  ],
-  "imageUrl": "https://sports-hub-three.vercel.app/preview.png",
-  "heroImageUrl": "https://sports-hub-three.vercel.app/hero.png",
-  "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
-  "splashBackgroundColor": "#4B0082",
-  "tags": ["football", "sports", "scores", "fixtures"],
-  "tagline": "Check football scores fast",
-  "buttonTitle": "Open App",
-  "ogTitle": "Sports Hub",
-  "ogDescription": "Live football scores and fixtures",
-  "ogImageUrl": "https://sports-hub-three.vercel.app/share.png",
-  "castShareUrl": "https://sports-hub-three.vercel.app/",
-  "homeUrl": "https://sports-hub-three.vercel.app/",
-  "webhookUrl": "",
   "accountAssociation": {
     "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ",
     "payload": "eyJkb21haW4iOiJzcG9ydHMtaHViLXRocmVlLnZlcmNlbC5hcHAifQ",
     "signature": "MHgwNzc3MjBhMjcwNjY0MWEyNDNlNTM2YzgxYzNmZDU5YjgwYWJiZmJiNGIxNTMxZWU3ZDk1N2IzYWQzMmM3ZTIyNWJkMTIzZDMwNmRhOTcxZjE2NzdiZmMzMjY3NmFjZWUzZmY1OTdjNWFmY2EyODk2MTg4ZmRkOWRkMjVkNWU5YzFi"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Sports Hub",
+    "homeUrl": "https://sports-hub-three.vercel.app/",
+    "iconUrl": "https://sports-hub-three.vercel.app/icon.png",
+    "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
+    "splashBackgroundColor": "#0A1A2B",
+
+    "subtitle": "Live football scores & fixtures",
+    "description": "Premier League & Championship scores with date filters.",
+    "primaryCategory": "news-media",
+    "tags": ["football","scores","fixtures"],
+    "screenshotUrls": ["https://sports-hub-three.vercel.app/screenshot1.png"],
+    "heroImageUrl": "https://sports-hub-three.vercel.app/hero.png",
+    "ogTitle": "Sports Hub",
+    "ogDescription": "Live football scores & fixtures.",
+    "ogImageUrl": "https://sports-hub-three.vercel.app/share.png"
   }
 }
