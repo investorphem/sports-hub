@@ -1,23 +1,17 @@
+// pages/_app.js
 import { useEffect } from "react";
-import { sdk } from "@farcaster/miniapp-sdk";
-import "../styles/globals.css";
 
-function MyApp({ Component, pageProps }) {
+export default function App({ Component, pageProps }) {
   useEffect(() => {
-    const init = async () => {
+    (async () => {
       try {
-        // Signal to Farcaster that app is ready
-        await sdk.actions.ready();
-        console.log("Miniapp is ready ✅");
-      } catch (err) {
-        console.error("Farcaster SDK error:", err);
+        const mod = await import("@farcaster/miniapp-sdk");
+        await mod.sdk.actions.ready();  // tell host we're ready
+      } catch {
+        // Outside Farcaster this is a no-op
       }
-    };
-
-    init();
+    })();
   }, []);
 
   return <Component {...pageProps} />;
 }
-
-export default MyApp;
