@@ -5,35 +5,74 @@ export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [competition, setCompetition] = useState("PL"); // PL = Premier League
+  const [date, setDate] = useState("");
+
+  const fetchMatches = async () => {
+    setLoading(true);
+    try {
+      let url = `/api/matches?competition=${competition}`;
+      if (date) url += `&date=${date}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch matches");
+      const data = await res.json();
+      setMatches(data.matches || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMatches = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/matches");
-        if (!res.ok) throw new Error("Failed to fetch matches");
-        const data = await res.json();
-        setMatches(data.matches || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMatches();
-  }, []);
+  }, [competition, date]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold text-center mb-6">⚽ Sports Hub</h1>
+      <h1 className="text-2xl font-bold text-center mb-4">⚽ Sports Hub</h1>
 
+      {/* Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-2 items-center justify-center mb-6">
+        <button
+          onClick={() => setCompetition("PL")}
+          className={`px-4 py-2 rounded-lg font-semibold ${
+            competition === "PL"
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-700 border"
+          }`}
+        >
+          Premier League
+        </button>
+        <button
+          onClick={() => setCompetition("ELC")}
+          className={`px-4 py-2 rounded-lg font-semibold ${
+            competition === "ELC"
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-700 border"
+          }`}
+        >
+          Championship
+        </button>
+
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="px-3 py-2 rounded-lg border text-gray-700"
+        />
+      </div>
+
+      {/* Match List */}
       {loading && (
         <div className="text-center text-gray-600">Loading matches...</div>
       )}
       {error && <p className="text-red-500 text-center">{error}</p>}
 
       <div className="grid gap-4">
+        {matches.length === 0 && !loading && (
+          <p className="text-center text-gray-600">No matches found</p>
+        )}
         {matches.map((match) => (
           <div
             key={match.id}
@@ -71,15 +110,6 @@ export default function Home() {
               Status:{" "}
               <span className="font-medium text-gray-800">{match.status}</span>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}            <p className="text-sm text-gray-600">
-              {new Date(match.utcDate).toLocaleString()}
-            </p>
-            <p className="text-sm">Status: {match.status}</p>
           </div>
         ))}
       </div>
