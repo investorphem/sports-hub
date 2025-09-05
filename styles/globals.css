@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optional custom styles */
+body {
+  @apply bg-gray-100 text-gray-900;
+  font-family: system-ui, sans-serif;
+}
