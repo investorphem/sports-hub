@@ -2,35 +2,28 @@ export default async function handler(req, res) {
   const { start, end } = req.query;
 
   if (!start || !end) {
-    return res.status(400).json({ error: "Start and end dates are required" });
+    return res.status(400).json({ error: "Missing start or end date" });
   }
 
   try {
-    const response = await fetch(
+    const apiRes = await fetch(
       `https://api.football-data.org/v4/matches?dateFrom=${start}&dateTo=${end}`,
       {
-        headers: {
-          "X-Auth-Token": process.env.FOOTBALL_DATA_API_KEY, // your API key in Vercel env
-        },
+        headers: { "X-Auth-Token": process.env.FOOTBALL_API_KEY },
       }
     );
 
-    if (!response.ok) {
+    const data = await apiRes.json();
+
+    if (!apiRes.ok) {
       return res
-        .status(response.status)
-        .json({ error: "Failed to fetch matches" });
+        .status(apiRes.status)
+        .json({ error: data.message || "Error fetching matches" });
     }
 
-    const data = await response.json();
-
-    // Filter only Premier League (2021) and Championship (2016)
-    const filteredMatches = (data.matches || []).filter((match) =>
-      ["2021", "2016"].includes(String(match.competition.id))
-    );
-
-    res.status(200).json({ matches: filteredMatches });
+    return res.status(200).json({ matches: data.matches || [] });
   } catch (error) {
-    console.error("API Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Fetch error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
