@@ -1,102 +1,82 @@
-import { useState } from "react";
+// pages/index.js
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [competition, setCompetition] = useState("premier");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchMatches = async () => {
-    if (!dateFrom || !dateTo) {
-      setError("Please select a date range");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setMatches([]);
-
-    try {
-      const res = await fetch(
-        `/api/matches?competition=${competition}&dateFrom=${dateFrom}&dateTo=${dateTo}`
-      );
-      const data = await res.json();
-
-      if (res.ok) {
+  useEffect(() => {
+    const fetchMatches = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/matches");
+        if (!res.ok) throw new Error("Failed to fetch matches");
+        const data = await res.json();
         setMatches(data.matches || []);
-      } else {
-        setError(data.error || "Failed to fetch matches");
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError("Something went wrong while fetching matches");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchMatches();
+  }, []);
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="min-h-screen bg-gray-100 p-4">
       <h1 className="text-2xl font-bold text-center mb-6">⚽ Sports Hub</h1>
 
-      {/* Competition Selector */}
-      <div className="mb-4">
-        <label className="mr-2">Competition:</label>
-        <select
-          value={competition}
-          onChange={(e) => setCompetition(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="premier">Premier League</option>
-          <option value="championship">Championship</option>
-        </select>
-      </div>
+      {loading && (
+        <div className="text-center text-gray-600">Loading matches...</div>
+      )}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-      {/* Date Range */}
-      <div className="mb-4">
-        <label className="mr-2">From:</label>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="border p-2 rounded"
-        />
-        <label className="ml-4 mr-2">To:</label>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="border p-2 rounded"
-        />
-      </div>
-
-      {/* Fetch Button */}
-      <button
-        onClick={fetchMatches}
-        className="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700"
-      >
-        Get Matches
-      </button>
-
-      {/* Loading/Error */}
-      {loading && <p className="mt-4">Loading matches...</p>}
-      {error && <p className="mt-4 text-red-500">{error}</p>}
-
-      {/* Matches */}
-      <div className="mt-6">
-        {matches.length === 0 && !loading && !error && (
-          <p>No matches found for this range.</p>
-        )}
-
+      <div className="grid gap-4">
         {matches.map((match) => (
           <div
             key={match.id}
-            className="p-4 border rounded mb-3 shadow-sm bg-white"
+            className="bg-white shadow-md rounded-xl p-4 flex flex-col items-center"
           >
-            <p className="font-semibold">
-              {match.homeTeam.name} vs {match.awayTeam.name}
-            </p>
-            <p className="text-sm text-gray-600">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex flex-col items-center flex-1">
+                <img
+                  src={match.homeTeam.crest || "/logo.png"}
+                  alt={match.homeTeam.name}
+                  className="w-10 h-10 mb-1"
+                />
+                <span className="text-sm font-semibold text-center">
+                  {match.homeTeam.name}
+                </span>
+              </div>
+
+              <span className="text-lg font-bold mx-3">vs</span>
+
+              <div className="flex flex-col items-center flex-1">
+                <img
+                  src={match.awayTeam.crest || "/logo.png"}
+                  alt={match.awayTeam.name}
+                  className="w-10 h-10 mb-1"
+                />
+                <span className="text-sm font-semibold text-center">
+                  {match.awayTeam.name}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 text-gray-600 text-sm text-center">
+              {new Date(match.utcDate).toLocaleString()}
+              <br />
+              Status:{" "}
+              <span className="font-medium text-gray-800">{match.status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}            <p className="text-sm text-gray-600">
               {new Date(match.utcDate).toLocaleString()}
             </p>
             <p className="text-sm">Status: {match.status}</p>
