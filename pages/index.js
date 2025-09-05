@@ -1,48 +1,90 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useWriteContract } from 'wagmi';
+import { useState } from "react";
 
 export default function Home() {
-  const { address, isConnected } = useAccount();
-  const { writeContract } = useWriteContract();
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleTestBet = async () => {
+  const fetchMatches = async () => {
+    if (!start || !end) {
+      setError("Please select both start and end dates.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
     try {
-      // ⚠️ Placeholder: send 0.01 ETH on Base to yourself (test transaction)
-      await writeContract({
-        address: address,
-        abi: [
-          {
-            "inputs": [],
-            "name": "fallback",
-            "stateMutability": "payable",
-            "type": "fallback"
-          }
-        ],
-        functionName: 'fallback',
-        value: BigInt(10000000000000000), // 0.01 ETH
-      });
+      const res = await fetch(`/api/matches?start=${start}&end=${end}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Failed to fetch matches");
+
+      setMatches(data.matches || []);
     } catch (err) {
-      console.error("Bet error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">Sports Hub 🏆</h1>
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="title">⚽ Sports Hub</h1>
 
-      <ConnectButton />
+      {/* Date Filters */}
+      <div className="card">
+        <label className="block mb-2 font-semibold">Start Date</label>
+        <input
+          type="date"
+          className="input mb-3"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+        />
 
-      {isConnected && (
-        <div className="mt-4">
-          <p className="mb-2">Connected: {address}</p>
-          <button
-            onClick={handleTestBet}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            Place Test Bet
-          </button>
-        </div>
+        <label className="block mb-2 font-semibold">End Date</label>
+        <input
+          type="date"
+          className="input mb-3"
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+        />
+
+        <button onClick={fetchMatches} className="button w-full">
+          {loading ? "Loading..." : "Search Matches"}
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <p className="text-red-600 text-center font-semibold mt-2">{error}</p>
       )}
+
+      {/* Matches */}
+      <div className="mt-4">
+        {matches.length > 0 ? (
+          matches.map((match) => (
+            <div key={match.id} className="card">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">{match.homeTeam.name}</span>
+                <span className="text-sm text-gray-500">vs</span>
+                <span className="font-bold">{match.awayTeam.name}</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                {new Date(match.utcDate).toLocaleString()}
+              </p>
+              <p className="text-sm mt-1">
+                Status: <span className="font-semibold">{match.status}</span>
+              </p>
+              <button className="button w-full mt-3">Bet with Token 🎟</button>
+            </div>
+          ))
+        ) : (
+          !loading && <p className="text-center text-gray-600">No matches found.</p>
+        )}
+      </div>
     </div>
   );
 }
