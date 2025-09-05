@@ -102,25 +102,48 @@ export default function Home() {
               key={match.id}
               className="bg-white shadow-md rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center"
             >
-              <div className="flex flex-col text-center sm:text-left">
-                <p className="font-bold text-lg">
-                  {match.homeTeam.name} vs {match.awayTeam.name}
-                </p>
+              {/* Teams with Logos */}
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center">
+                  <img
+                    src={match.homeTeam.crest}
+                    alt={match.homeTeam.name}
+                    className="w-10 h-10 mb-1"
+                  />
+                  <span className="text-sm font-semibold text-center">
+                    {match.homeTeam.name}
+                  </span>
+                </div>
+                <span className="font-bold text-lg">vs</span>
+                <div className="flex flex-col items-center">
+                  <img
+                    src={match.awayTeam.crest}
+                    alt={match.awayTeam.name}
+                    className="w-10 h-10 mb-1"
+                  />
+                  <span className="text-sm font-semibold text-center">
+                    {match.awayTeam.name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Match Info */}
+              <div className="text-center sm:text-right mt-3 sm:mt-0">
                 <p className="text-sm text-gray-500">
                   {new Date(match.utcDate).toLocaleString()}
                 </p>
+                <span
+                  className={`mt-2 inline-block px-3 py-1 text-sm font-medium rounded ${
+                    match.status === "FINISHED"
+                      ? "bg-green-100 text-green-700"
+                      : match.status === "SCHEDULED"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {match.status}
+                </span>
               </div>
-              <span
-                className={`mt-2 sm:mt-0 px-3 py-1 text-sm font-medium rounded ${
-                  match.status === "FINISHED"
-                    ? "bg-green-100 text-green-700"
-                    : match.status === "SCHEDULED"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {match.status}
-              </span>
             </div>
           ))
         ) : (
