@@ -3,7 +3,7 @@ import { useState } from "react";
 export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [league, setLeague] = useState("PL"); // Default: Premier League
+  const [league, setLeague] = useState("PL");
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +32,13 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle Bet Click
+  const handleBet = (matchId, option) => {
+    console.log(`Bet placed: Match ${matchId}, Option: ${option}`);
+    alert(`Bet placed on ${option} for match ${matchId}`);
+    // ✅ Later: Replace with Base chain contract call
   };
 
   return (
@@ -96,7 +103,7 @@ export default function Home() {
             </p>
             <p className="text-sm text-gray-600">Status: {match.status}</p>
 
-            {/* ✅ Step 3: Odds */}
+            {/* Odds */}
             {match.odds ? (
               <div className="mt-2 text-sm text-gray-700">
                 <p>
@@ -117,6 +124,28 @@ export default function Home() {
             ) : (
               <p className="mt-2 text-xs text-gray-500">Odds not available</p>
             )}
+
+            {/* ✅ Betting Buttons */}
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => handleBet(match.id, "Home")}
+                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700"
+              >
+                Bet Home
+              </button>
+              <button
+                onClick={() => handleBet(match.id, "Draw")}
+                className="flex-1 bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600"
+              >
+                Bet Draw
+              </button>
+              <button
+                onClick={() => handleBet(match.id, "Away")}
+                className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700"
+              >
+                Bet Away
+              </button>
+            </div>
           </div>
         ))}
       </div>
