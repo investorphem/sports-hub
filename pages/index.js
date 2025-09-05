@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { sdk } from "@farcaster/miniapp-sdk";
 
 export default function Home() {
   const [matches, setMatches] = useState([]);
@@ -7,116 +6,133 @@ export default function Home() {
   const [error, setError] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [filter, setFilter] = useState("all"); // all, premier, championship
 
   const fetchMatches = async () => {
     if (!startDate || !endDate) {
-      setError("Please select both start and end dates.");
+      setError("Please select a date range.");
       return;
     }
 
     setLoading(true);
     setError("");
+
     try {
-      const res = await fetch(
-        `/api/matches?start=${startDate}&end=${endDate}`
-      );
+      const res = await fetch(`/api/matches?start=${startDate}&end=${endDate}`);
       const data = await res.json();
 
-      if (data.matches && data.matches.length > 0) {
-        setMatches(data.matches);
+      if (!res.ok) {
+        setError(data.error || "Failed to fetch matches");
       } else {
-        setMatches([]);
-        setError("No matches found for this range.");
+        setMatches(data.matches || []);
       }
     } catch (err) {
-      console.error("Error fetching matches:", err);
       setError("Failed to fetch matches");
     } finally {
       setLoading(false);
     }
   };
 
-  // Let Farcaster know app is ready
-  if (typeof window !== "undefined") {
-    sdk.actions.ready();
-  }
+  // Filter logic
+  const filteredMatches = matches.filter((m) => {
+    if (filter === "premier" && m.competition.id !== 2021) return false;
+    if (filter === "championship" && m.competition.id !== 2016) return false;
+    return true;
+  });
+
+  // Logo chooser
+  const getCompetitionIcon = (id) => {
+    if (id === 2021) return "🦁"; // Premier League
+    if (id === 2016) return "🏟️"; // Championship
+    return "🏆"; // Others
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold text-center mb-6">Sports Hub ⚽</h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-2xl font-bold text-center mb-6">⚽ Sports Hub</h1>
 
-      {/* Date Range Picker */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-semibold mb-1">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="p-2 border rounded-md w-full"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="p-2 border rounded-md w-full"
-          />
-        </div>
+      {/* Date Range Inputs */}
+      <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="p-2 border rounded"
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="p-2 border rounded"
+        />
         <button
           onClick={fetchMatches}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md mt-4 md:mt-6"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Search
         </button>
       </div>
 
-      {/* Matches */}
+      {/* League Filter Tabs */}
+      <div className="flex justify-center gap-4 mb-6">
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded ${
+            filter === "all" ? "bg-blue-600 text-white" : "bg-white border"
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setFilter("premier")}
+          className={`px-4 py-2 rounded ${
+            filter === "premier" ? "bg-blue-600 text-white" : "bg-white border"
+          }`}
+        >
+          Premier League 🦁
+        </button>
+        <button
+          onClick={() => setFilter("championship")}
+          className={`px-4 py-2 rounded ${
+            filter === "championship"
+              ? "bg-blue-600 text-white"
+              : "bg-white border"
+          }`}
+        >
+          Championship 🏟️
+        </button>
+      </div>
+
       {loading && <p className="text-center text-gray-600">Loading...</p>}
-      {error && <p className="text-center text-red-600">{error}</p>}
+      {error && <p className="text-center text-red-500">{error}</p>}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {matches.map((match) => (
-          <div
-            key={match.id}
-            className="bg-white shadow-md rounded-lg p-4 text-center"
-          >
-            <h2 className="font-bold text-lg mb-2">{match.competition.name}</h2>
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col items-center">
-                <img
-                  src={match.homeTeam.crest}
-                  alt={match.homeTeam.name}
-                  className="w-10 h-10 mb-1"
-                />
-                <span className="text-sm font-semibold text-center">
-                  {match.homeTeam.name}
-                </span>
+      {/* Matches */}
+      <div className="space-y-4">
+        {filteredMatches.length > 0 ? (
+          filteredMatches.map((match) => (
+            <div key={match.id} className="bg-white p-4 rounded shadow-md">
+              <p className="text-sm text-gray-500 font-semibold flex items-center gap-2">
+                <span>{getCompetitionIcon(match.competition.id)}</span>
+                {match.competition.name}
+              </p>
+              <div className="flex justify-between items-center mt-2">
+                <span className="font-bold">{match.homeTeam.name}</span>
+                <span className="text-gray-500">vs</span>
+                <span className="font-bold">{match.awayTeam.name}</span>
               </div>
-
-              <span className="text-lg font-bold">vs</span>
-
-              <div className="flex flex-col items-center">
-                <img
-                  src={match.awayTeam.crest}
-                  alt={match.awayTeam.name}
-                  className="w-10 h-10 mb-1"
-                />
-                <span className="text-sm font-semibold text-center">
-                  {match.awayTeam.name}
-                </span>
-              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                {new Date(match.utcDate).toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500">Status: {match.status}</p>
             </div>
-
-            <p className="mt-3 text-sm text-gray-700">
-              {new Date(match.utcDate).toLocaleString()}
+          ))
+        ) : (
+          !loading && (
+            <p className="text-center text-gray-600">
+              No matches found for this range.
             </p>
-            <p className="text-xs text-gray-500">Status: {match.status}</p>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
   );
