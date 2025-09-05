@@ -1,9 +1,24 @@
+/* styles/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Optional custom styles */
 body {
-  @apply bg-gray-100 text-gray-900;
-  font-family: system-ui, sans-serif;
+  @apply bg-gray-100 text-gray-900 font-sans;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow-md p-4 mb-4;
+}
+
+.button {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-xl;
+}
+
+.input {
+  @apply border border-gray-300 rounded-lg px-3 py-2 w-full;
+}
+
+.title {
+  @apply text-xl font-bold text-center mb-4;
 }
