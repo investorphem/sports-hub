@@ -1,20 +1,18 @@
-import '@/styles/globals.css'
-import '@rainbow-me/rainbowkit/styles.css';
-
-import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
-import { base } from 'wagmi/chains';
-import { publicProvider } from 'wagmi/providers/public';
+import "../styles/globals.css";
+import "@rainbow-me/rainbowkit/styles.css";
+import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import { configureChains, createConfig, WagmiConfig } from "wagmi";
+import { mainnet, base } from "wagmi/chains";
+import { publicProvider } from "wagmi/providers/public";
 
 const { chains, publicClient } = configureChains(
-  [base], // 👈 use Base chain only
+  [mainnet, base],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
-  appName: 'Sports Hub',
-  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // Get from WalletConnect cloud
+  appName: "Sports Hub",
+  projectId: "sports-hub-miniapp",
   chains,
 });
 
