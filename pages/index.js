@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 export default function Home() {
+  const [league, setLeague] = useState("PL"); // Default Premier League
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [matches, setMatches] = useState([]);
@@ -17,7 +18,7 @@ export default function Home() {
     setError("");
     try {
       const res = await fetch(
-        `/api/matches?start=${startDate}&end=${endDate}`
+        `/api/matches?start=${startDate}&end=${endDate}&league=${league}`
       );
       const data = await res.json();
 
@@ -39,8 +40,22 @@ export default function Home() {
         ⚽ Sports Hub
       </h1>
 
-      {/* Date Range Picker */}
+      {/* Filters */}
       <div className="bg-white shadow-md rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+        {/* League Dropdown */}
+        <div className="flex flex-col flex-1">
+          <label className="text-sm font-medium mb-1">League</label>
+          <select
+            value={league}
+            onChange={(e) => setLeague(e.target.value)}
+            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
+          >
+            <option value="PL">Premier League</option>
+            <option value="ELC">Championship</option>
+          </select>
+        </div>
+
+        {/* Start Date */}
         <div className="flex flex-col flex-1">
           <label className="text-sm font-medium mb-1">Start Date</label>
           <input
@@ -50,6 +65,8 @@ export default function Home() {
             className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
           />
         </div>
+
+        {/* End Date */}
         <div className="flex flex-col flex-1">
           <label className="text-sm font-medium mb-1">End Date</label>
           <input
@@ -59,6 +76,8 @@ export default function Home() {
             className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
           />
         </div>
+
+        {/* Search Button */}
         <button
           onClick={fetchMatches}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg self-end sm:self-center"
