@@ -1,156 +1,124 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [league, setLeague] = useState("PL"); // Default Premier League
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [league, setLeague] = useState("PL"); // Default: Premier League
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const fetchMatches = async () => {
     if (!startDate || !endDate) {
-      setError("Please select both start and end dates.");
+      setError("Please select a start and end date");
       return;
     }
-
-    setLoading(true);
     setError("");
-    try {
-      const res = await fetch(
-        `/api/matches?start=${startDate}&end=${endDate}&league=${league}`
-      );
-      const data = await res.json();
+    setLoading(true);
 
-      if (res.ok) {
-        setMatches(data.matches || []);
-      } else {
-        setError(data.error || "Failed to fetch matches.");
+    try {
+      const response = await fetch(
+        `/api/matchesWithOdds?start=${startDate}&end=${endDate}&league=${league}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch matches");
       }
+
+      setMatches(data.matches || []);
     } catch (err) {
-      console.error(err);
-      setError("Failed to fetch matches.");
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
-      <h1 className="text-3xl font-bold text-indigo-700 mb-6">
-        ⚽ Sports Hub
-      </h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-2xl font-bold text-center mb-6">⚽ Sports Hub</h1>
 
       {/* Filters */}
-      <div className="bg-white shadow-md rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-4 w-full max-w-xl">
-        {/* League Dropdown */}
-        <div className="flex flex-col flex-1">
-          <label className="text-sm font-medium mb-1">League</label>
-          <select
-            value={league}
-            onChange={(e) => setLeague(e.target.value)}
-            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
-          >
-            <option value="PL">Premier League</option>
-            <option value="ELC">Championship</option>
-          </select>
-        </div>
+      <div className="bg-white shadow p-4 rounded-lg mb-6">
+        <label className="block mb-2 font-medium">Select League</label>
+        <select
+          value={league}
+          onChange={(e) => setLeague(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        >
+          <option value="PL">Premier League</option>
+          <option value="ELC">Championship</option>
+        </select>
 
-        {/* Start Date */}
-        <div className="flex flex-col flex-1">
-          <label className="text-sm font-medium mb-1">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
-          />
-        </div>
+        <label className="block mb-2 font-medium">Start Date</label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
 
-        {/* End Date */}
-        <div className="flex flex-col flex-1">
-          <label className="text-sm font-medium mb-1">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
-          />
-        </div>
+        <label className="block mb-2 font-medium">End Date</label>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
 
-        {/* Search Button */}
         <button
           onClick={fetchMatches}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg self-end sm:self-center"
+          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
         >
-          Search
+          {loading ? "Loading..." : "Load Matches"}
         </button>
       </div>
 
-      {/* Error */}
-      {error && (
-        <p className="text-red-500 font-semibold mb-4">{error}</p>
-      )}
+      {/* Errors */}
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-      {/* Loading */}
-      {loading && <p className="text-gray-600">Loading matches...</p>}
-
-      {/* Matches */}
-      <div className="grid gap-4 w-full max-w-2xl">
-        {matches.length > 0 ? (
-          matches.map((match) => (
-            <div
-              key={match.id}
-              className="bg-white shadow-md rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center"
-            >
-              {/* Teams with Logos */}
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-center">
-                  <img
-                    src={match.homeTeam.crest}
-                    alt={match.homeTeam.name}
-                    className="w-10 h-10 mb-1"
-                  />
-                  <span className="text-sm font-semibold text-center">
-                    {match.homeTeam.name}
-                  </span>
-                </div>
-                <span className="font-bold text-lg">vs</span>
-                <div className="flex flex-col items-center">
-                  <img
-                    src={match.awayTeam.crest}
-                    alt={match.awayTeam.name}
-                    className="w-10 h-10 mb-1"
-                  />
-                  <span className="text-sm font-semibold text-center">
-                    {match.awayTeam.name}
-                  </span>
-                </div>
-              </div>
-
-              {/* Match Info */}
-              <div className="text-center sm:text-right mt-3 sm:mt-0">
-                <p className="text-sm text-gray-500">
-                  {new Date(match.utcDate).toLocaleString()}
-                </p>
-                <span
-                  className={`mt-2 inline-block px-3 py-1 text-sm font-medium rounded ${
-                    match.status === "FINISHED"
-                      ? "bg-green-100 text-green-700"
-                      : match.status === "SCHEDULED"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {match.status}
-                </span>
-              </div>
-            </div>
-          ))
-        ) : (
-          !loading && (
-            <p className="text-gray-500 italic">No matches found for this range.</p>
-          )
+      {/* Matches List */}
+      <div className="space-y-4">
+        {matches.length === 0 && !loading && (
+          <p className="text-center text-gray-500">No matches found</p>
         )}
+
+        {matches.map((match) => (
+          <div
+            key={match.id}
+            className="bg-white shadow p-4 rounded-lg border"
+          >
+            <h2 className="text-lg font-bold text-gray-800">
+              {match.homeTeam.name} vs {match.awayTeam.name}
+            </h2>
+            <p className="text-sm text-gray-600">
+              {new Date(match.utcDate).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600">Status: {match.status}</p>
+
+            {/* ✅ Step 3: Odds */}
+            {match.odds ? (
+              <div className="mt-2 text-sm text-gray-700">
+                <p>
+                  Odds:{" "}
+                  <span className="ml-2 font-semibold text-indigo-600">
+                    Home {match.odds.home}
+                  </span>{" "}
+                  |{" "}
+                  <span className="ml-2 font-semibold text-indigo-600">
+                    Draw {match.odds.draw}
+                  </span>{" "}
+                  |{" "}
+                  <span className="ml-2 font-semibold text-indigo-600">
+                    Away {match.odds.away}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">Odds not available</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
