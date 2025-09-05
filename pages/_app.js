@@ -1,33 +1,5 @@
 import "../styles/globals.css";
-import "@rainbow-me/rainbowkit/styles.css";
-import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { configureChains, createConfig, WagmiConfig } from "wagmi";
-import { mainnet, base } from "wagmi/chains";
-import { publicProvider } from "wagmi/providers/public";
-
-const { chains, publicClient } = configureChains(
-  [mainnet, base],
-  [publicProvider()]
-);
-
-const { connectors } = getDefaultWallets({
-  appName: "Sports Hub",
-  projectId: "sports-hub-miniapp",
-  chains,
-});
-
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors,
-  publicClient,
-});
 
 export default function App({ Component, pageProps }) {
-  return (
-    <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains}>
-        <Component {...pageProps} />
-      </RainbowKitProvider>
-    </WagmiConfig>
-  );
+  return <Component {...pageProps} />;
 }
