@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const { start, end } = req.query;
+  const { start, end, league } = req.query;
 
   if (!start || !end) {
     return res.status(400).json({ error: "Missing start or end date" });
@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     const apiRes = await fetch(
-      `https://api.football-data.org/v4/matches?dateFrom=${start}&dateTo=${end}`,
+      `https://api.football-data.org/v4/competitions/${league}/matches?dateFrom=${start}&dateTo=${end}`,
       {
         headers: { "X-Auth-Token": process.env.FOOTBALL_API_KEY },
       }
@@ -21,9 +21,9 @@ export default async function handler(req, res) {
         .json({ error: data.message || "Error fetching matches" });
     }
 
-    return res.status(200).json({ matches: data.matches || [] });
+    res.status(200).json({ matches: data.matches || [] });
   } catch (error) {
     console.error("Fetch error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 }
