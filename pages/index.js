@@ -1,88 +1,113 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const fetchMatches = async () => {
-    if (!start || !end) {
+    if (!startDate || !endDate) {
       setError("Please select both start and end dates.");
       return;
     }
 
     setLoading(true);
     setError("");
-
     try {
-      const res = await fetch(`/api/matches?start=${start}&end=${end}`);
+      const res = await fetch(
+        `/api/matches?start=${startDate}&end=${endDate}`
+      );
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Failed to fetch matches");
-
-      setMatches(data.matches || []);
+      if (res.ok) {
+        setMatches(data.matches || []);
+      } else {
+        setError(data.error || "Failed to fetch matches.");
+      }
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setError("Failed to fetch matches.");
     }
+    setLoading(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="title">⚽ Sports Hub</h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
+      <h1 className="text-3xl font-bold text-indigo-700 mb-6">
+        ⚽ Sports Hub
+      </h1>
 
-      {/* Date Filters */}
-      <div className="card">
-        <label className="block mb-2 font-semibold">Start Date</label>
-        <input
-          type="date"
-          className="input mb-3"
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-        />
-
-        <label className="block mb-2 font-semibold">End Date</label>
-        <input
-          type="date"
-          className="input mb-3"
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
-        />
-
-        <button onClick={fetchMatches} className="button w-full">
-          {loading ? "Loading..." : "Search Matches"}
+      {/* Date Range Picker */}
+      <div className="bg-white shadow-md rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+        <div className="flex flex-col flex-1">
+          <label className="text-sm font-medium mb-1">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
+          />
+        </div>
+        <div className="flex flex-col flex-1">
+          <label className="text-sm font-medium mb-1">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border rounded px-3 py-2 focus:ring focus:ring-indigo-400"
+          />
+        </div>
+        <button
+          onClick={fetchMatches}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg self-end sm:self-center"
+        >
+          Search
         </button>
       </div>
 
       {/* Error */}
       {error && (
-        <p className="text-red-600 text-center font-semibold mt-2">{error}</p>
+        <p className="text-red-500 font-semibold mb-4">{error}</p>
       )}
 
+      {/* Loading */}
+      {loading && <p className="text-gray-600">Loading matches...</p>}
+
       {/* Matches */}
-      <div className="mt-4">
+      <div className="grid gap-4 w-full max-w-2xl">
         {matches.length > 0 ? (
           matches.map((match) => (
-            <div key={match.id} className="card">
-              <div className="flex justify-between items-center">
-                <span className="font-bold">{match.homeTeam.name}</span>
-                <span className="text-sm text-gray-500">vs</span>
-                <span className="font-bold">{match.awayTeam.name}</span>
+            <div
+              key={match.id}
+              className="bg-white shadow-md rounded-lg p-4 flex flex-col sm:flex-row justify-between items-center"
+            >
+              <div className="flex flex-col text-center sm:text-left">
+                <p className="font-bold text-lg">
+                  {match.homeTeam.name} vs {match.awayTeam.name}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {new Date(match.utcDate).toLocaleString()}
+                </p>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                {new Date(match.utcDate).toLocaleString()}
-              </p>
-              <p className="text-sm mt-1">
-                Status: <span className="font-semibold">{match.status}</span>
-              </p>
-              <button className="button w-full mt-3">Bet with Token 🎟</button>
+              <span
+                className={`mt-2 sm:mt-0 px-3 py-1 text-sm font-medium rounded ${
+                  match.status === "FINISHED"
+                    ? "bg-green-100 text-green-700"
+                    : match.status === "SCHEDULED"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {match.status}
+              </span>
             </div>
           ))
         ) : (
-          !loading && <p className="text-center text-gray-600">No matches found.</p>
+          !loading && (
+            <p className="text-gray-500 italic">No matches found for this range.</p>
+          )
         )}
       </div>
     </div>
