@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [matches, setMatches] = useState([]);
@@ -21,6 +21,10 @@ export default function Home() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchMatches(); // load automatically on page open
+  }, []);
+
   const openBetModal = (match) => {
     setSelectedMatch(match);
     setBetAmount("");
@@ -41,7 +45,7 @@ export default function Home() {
         onClick={fetchMatches}
         className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-4"
       >
-        Load Matches
+        Refresh Matches
       </button>
 
       {loading && <p className="text-center">Loading matches...</p>}
