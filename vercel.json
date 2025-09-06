@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1",
+      "headers": {
+        "Content-Security-Policy": "frame-ancestors https://* http://*;",
+        "X-Frame-Options": ""
+      }
+    }
+  ]
+}
