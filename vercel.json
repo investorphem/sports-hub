@@ -5,8 +5,7 @@
       "src": "/(.*)",
       "dest": "/$1",
       "headers": {
-        "Content-Security-Policy": "frame-ancestors https://* http://*;",
-        "X-Frame-Options": ""
+        "Content-Security-Policy": "frame-ancestors 'self' https://* https://*.farcaster.xyz;"
       }
     }
   ]
