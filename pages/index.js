@@ -1,121 +1,105 @@
+// pages/index.js
+import Head from "next/head";
 import { useEffect, useState } from "react";
-import sdk from "@farcaster/miniapp-sdk";
 
 export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [sport, setSport] = useState("soccer_epl");
-  const [date, setDate] = useState("");
+  const [leagueFilter, setLeagueFilter] = useState("all");
 
-  useEffect(() => {
-    // ✅ Tell Farcaster the app is ready
-    sdk.actions.ready();
-  }, []);
-
-  const fetchMatches = async () => {
-    if (!date) {
-      setError("Please select a date.");
-      return;
-    }
-
+  const loadMatches = async () => {
     setLoading(true);
-    setError(null);
-
     try {
-      const res = await fetch(`/api/matchesWithOdds?sport=${sport}&date=${date}`);
+      const res = await fetch("/api/matches");
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch matches");
-      }
-
-      setMatches(data.matches || []);
+      setMatches(data);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err.message);
-      setMatches([]);
-    } finally {
-      setLoading(false);
+      console.error("Error loading matches:", err);
     }
+    setLoading(false);
   };
 
+  useEffect(() => {
+    loadMatches();
+  }, []);
+
+  const filteredMatches =
+    leagueFilter === "all"
+      ? matches
+      : matches.filter((m) =>
+          m.sport_title.toLowerCase().includes(leagueFilter.toLowerCase())
+        );
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-2xl font-bold text-center mb-4">⚽ Sports Hub</h1>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-3 mb-6">
-        <select
-          value={sport}
-          onChange={(e) => setSport(e.target.value)}
-          className="p-2 rounded bg-gray-800 border border-gray-700"
-        >
-          <option value="soccer_epl">Premier League</option>
-          <option value="soccer_efl_champ">Championship</option>
-          <option value="all">All Leagues</option>
-        </select>
-
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="p-2 rounded bg-gray-800 border border-gray-700"
+    <>
+      <Head>
+        <title>SportsHub Betting</title>
+        {/* Embed meta for Farcaster */}
+        <meta
+          name="fc:miniapp"
+          content='{"version":"1","imageUrl":"https://sports-hub-three.vercel.app","button":{"title":"⚽ Bet Now","action":{"type":"launch_miniapp","url":"https://sports-hub-three.vercel.app","name":"SportsHub","splashImageUrl":"https://sports-hub-three.vercel.app","splashBackgroundColor":"#ffffff"}}}'
         />
+        <meta
+          name="fc:frame"
+          content='{"version":"1","imageUrl":"https://sports-hub-three.vercel.app","button":{"title":"⚽ Bet Now","action":{"type":"launch_frame","url":"https://sports-hub-three.vercel.app","name":"SportsHub","splashImageUrl":"https://sports-hub-three.vercel.app","splashBackgroundColor":"#ffffff"}}}'
+        />
+      </Head>
 
-        <button
-          onClick={fetchMatches}
-          disabled={loading}
-          className="p-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? "Loading..." : "Load Matches"}
-        </button>
-      </div>
+      <main style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
+        <h1 style={{ textAlign: "center" }}>⚽ SportsHub Betting</h1>
+        <p style={{ textAlign: "center" }}>
+          Browse matches and odds. Soon: bet on-chain 🎉
+        </p>
 
-      {/* Errors */}
-      {error && (
-        <p className="text-red-400 text-center mb-4">{error}</p>
-      )}
-
-      {/* Matches */}
-      <div className="space-y-4">
-        {matches.length === 0 && !loading && (
-          <p className="text-gray-400 text-center">No matches found.</p>
-        )}
-
-        {matches.map((match, i) => (
-          <div
-            key={i}
-            className="p-4 bg-gray-800 rounded-lg shadow flex flex-col"
+        {/* Filter */}
+        <div style={{ margin: "20px 0", textAlign: "center" }}>
+          <label htmlFor="league">Filter by League: </label>
+          <select
+            id="league"
+            value={leagueFilter}
+            onChange={(e) => setLeagueFilter(e.target.value)}
           >
-            <span className="text-sm text-gray-400">
-              {match.league || "Unknown League"}
-            </span>
-            <h2 className="text-lg font-semibold mb-2">
-              {match.home_team} vs {match.away_team}
-            </h2>
-            <p className="text-sm text-gray-300 mb-2">
-              {new Date(match.commence_time).toLocaleString()}
-            </p>
+            <option value="all">All</option>
+            <option value="soccer">Soccer</option>
+            <option value="basketball">Basketball</option>
+            <option value="tennis">Tennis</option>
+          </select>
+        </div>
 
-            {match.odds && match.odds.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                {match.odds.map((o, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-gray-700 p-2 rounded text-center"
-                  >
-                    <p className="font-bold">{o.name}</p>
-                    <p>{o.price}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">Odds not available</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+        {/* Matches */}
+        {loading ? (
+          <p style={{ textAlign: "center" }}>Loading matches...</p>
+        ) : filteredMatches.length === 0 ? (
+          <p style={{ textAlign: "center" }}>No matches available.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {filteredMatches.map((match) => (
+              <li
+                key={match.id}
+                style={{
+                  border: "1px solid #ccc",
+                  borderRadius: "12px",
+                  padding: "15px",
+                  marginBottom: "15px",
+                  background: "#fff",
+                }}
+              >
+                <h3>{match.sport_title}</h3>
+                <p>
+                  {match.home_team} vs {match.away_team}
+                </p>
+                {match.bookmakers?.[0]?.markets?.[0]?.outcomes?.map(
+                  (outcome, idx) => (
+                    <p key={idx}>
+                      {outcome.name}: {outcome.price}
+                    </p>
+                  )
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </>
   );
 }
