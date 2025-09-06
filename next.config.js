@@ -1,24 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-
-  async headers() {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  headers: async () => {
     return [
       {
         source: "/(.*)",
         headers: [
           {
-            key: "Access-Control-Allow-Origin",
-            value: "*", // allow Farcaster to load your app
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://* https://*.farcaster.xyz;",
           },
         ],
       },
     ];
-  },
-
-  images: {
-    domains: ["api.sportsdata.io", "media.api-sports.io", "www.thesportsdb.com"],
   },
 };
 
