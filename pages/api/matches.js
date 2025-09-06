@@ -1,29 +1,22 @@
+// pages/api/matches.js
 export default async function handler(req, res) {
-  const { start, end, league } = req.query;
-
-  if (!start || !end) {
-    return res.status(400).json({ error: "Missing start or end date" });
-  }
-
   try {
-    const apiRes = await fetch(
-      `https://api.football-data.org/v4/competitions/${league}/matches?dateFrom=${start}&dateTo=${end}`,
-      {
-        headers: { "X-Auth-Token": process.env.FOOTBALL_API_KEY },
-      }
+    const sport = "soccer_epl"; // Example: Premier League
+    const region = "uk";        // Regions: us, uk, eu, au
+    const markets = "h2h";      // head-to-head odds
+
+    const response = await fetch(
+      `https://api.the-odds-api.com/v4/sports/${sport}/odds/?regions=${region}&markets=${markets}&apiKey=${process.env.ODDS_API_KEY}`
     );
 
-    const data = await apiRes.json();
-
-    if (!apiRes.ok) {
-      return res
-        .status(apiRes.status)
-        .json({ error: data.message || "Error fetching matches" });
+    if (!response.ok) {
+      throw new Error("Failed to fetch odds");
     }
 
-    res.status(200).json({ matches: data.matches || [] });
+    const data = await response.json();
+    res.status(200).json(data);
   } catch (error) {
-    console.error("Fetch error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching matches:", error);
+    res.status(500).json({ error: "Failed to load matches" });
   }
 }
