@@ -1,23 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  swcMinify: true,
+
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
           {
-            key: "X-Frame-Options",
-            value: "ALLOWALL"
+            key: "Access-Control-Allow-Origin",
+            value: "*", // allow Farcaster to load your app
           },
-          {
-            key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://*"
-          }
-        ]
-      }
+        ],
+      },
     ];
-  }
+  },
+
+  images: {
+    domains: ["api.sportsdata.io", "media.api-sports.io", "www.thesportsdb.com"],
+  },
 };
 
 module.exports = nextConfig;
