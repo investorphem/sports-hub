@@ -1,174 +1,121 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import sdk from "@farcaster/miniapp-sdk";
 
 export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [selectedLeague, setSelectedLeague] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1); // pagination
-  const perPage = 10;
+  const [error, setError] = useState(null);
+  const [sport, setSport] = useState("soccer_epl");
+  const [date, setDate] = useState("");
 
-  const leagues = [
-    { id: "all", name: "All Leagues" },
-    { id: "Premier League", name: "Premier League" },
-    { id: "Championship", name: "Championship" },
-    { id: "Primera Division", name: "La Liga" },
-    { id: "Serie A", name: "Serie A" },
-    { id: "Bundesliga", name: "Bundesliga" },
-    { id: "UEFA Champions League", name: "Champions League" },
-  ];
+  useEffect(() => {
+    // ✅ Tell Farcaster the app is ready
+    sdk.actions.ready();
+  }, []);
 
-  async function loadMatches() {
-    if (!start || !end) {
-      alert("Please select both start and end date");
+  const fetchMatches = async () => {
+    if (!date) {
+      setError("Please select a date.");
       return;
     }
 
     setLoading(true);
+    setError(null);
+
     try {
-      const res = await fetch(`/api/matchesWithOdds?start=${start}&end=${end}`);
+      const res = await fetch(`/api/matchesWithOdds?sport=${sport}&date=${date}`);
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch matches");
+      }
+
       setMatches(data.matches || []);
-      setPage(1); // reset pagination
     } catch (err) {
-      console.error(err);
-      alert("Failed to fetch matches");
+      console.error("Fetch error:", err);
+      setError(err.message);
+      setMatches([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
-
-  // Reset pagination when filters/search change
-  useEffect(() => {
-    setPage(1);
-  }, [selectedLeague, searchTerm]);
-
-  // Group matches by competition
-  function groupByLeague(matches) {
-    return matches.reduce((groups, match) => {
-      const league = match.competition || "Unknown";
-      if (!groups[league]) groups[league] = [];
-      groups[league].push(match);
-      return groups;
-    }, {});
-  }
-
-  // Apply league filter
-  let filteredMatches =
-    selectedLeague === "all"
-      ? matches
-      : matches.filter((m) => m.competition === selectedLeague);
-
-  // Apply search filter (by team name)
-  if (searchTerm.trim() !== "") {
-    const lower = searchTerm.toLowerCase();
-    filteredMatches = filteredMatches.filter(
-      (m) =>
-        m.homeTeam.toLowerCase().includes(lower) ||
-        m.awayTeam.toLowerCase().includes(lower)
-    );
-  }
-
-  // Pagination slice
-  const paginatedMatches = filteredMatches.slice(0, page * perPage);
-
-  const groupedMatches =
-    selectedLeague === "all"
-      ? groupByLeague(paginatedMatches)
-      : { [selectedLeague]: paginatedMatches };
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold text-center mb-4">Football Matches & Odds</h1>
+    <div className="min-h-screen bg-gray-900 text-white p-4">
+      <h1 className="text-2xl font-bold text-center mb-4">⚽ Sports Hub</h1>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-2 mb-4">
-        <input
-          type="date"
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-          className="p-2 border rounded w-full md:w-auto"
-        />
-        <input
-          type="date"
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
-          className="p-2 border rounded w-full md:w-auto"
-        />
-
+      <div className="flex flex-col gap-3 mb-6">
         <select
-          value={selectedLeague}
-          onChange={(e) => setSelectedLeague(e.target.value)}
-          className="p-2 border rounded w-full md:w-auto"
+          value={sport}
+          onChange={(e) => setSport(e.target.value)}
+          className="p-2 rounded bg-gray-800 border border-gray-700"
         >
-          {leagues.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
+          <option value="soccer_epl">Premier League</option>
+          <option value="soccer_efl_champ">Championship</option>
+          <option value="all">All Leagues</option>
         </select>
 
         <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search team..."
-          className="p-2 border rounded w-full md:w-auto"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="p-2 rounded bg-gray-800 border border-gray-700"
         />
 
         <button
-          onClick={loadMatches}
+          onClick={fetchMatches}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="p-2 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Loading..." : "Load Matches"}
         </button>
       </div>
 
-      {/* Matches */}
-      {Object.keys(groupedMatches).length === 0 ? (
-        <p className="text-center text-red-500">No matches found for this range.</p>
-      ) : (
-        Object.entries(groupedMatches).map(([league, matches]) => (
-          <div key={league} className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">{league}</h2>
-            <div className="space-y-2">
-              {matches.map((match) => (
-                <div key={match.id} className="bg-white shadow p-3 rounded">
-                  <p className="font-bold">
-                    {match.homeTeam} vs {match.awayTeam}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(match.utcDate).toLocaleString()}
-                  </p>
-                  {match.odds ? (
-                    <div className="flex gap-4 mt-2">
-                      <span>Home: {match.odds.home || "-"}</span>
-                      <span>Draw: {match.odds.draw || "-"}</span>
-                      <span>Away: {match.odds.away || "-"}</span>
-                    </div>
-                  ) : (
-                    <p className="text-gray-400">Odds not available</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))
+      {/* Errors */}
+      {error && (
+        <p className="text-red-400 text-center mb-4">{error}</p>
       )}
 
-      {/* Load More */}
-      {filteredMatches.length > paginatedMatches.length && (
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setPage((prev) => prev + 1)}
-            className="bg-green-600 text-white px-6 py-2 rounded"
+      {/* Matches */}
+      <div className="space-y-4">
+        {matches.length === 0 && !loading && (
+          <p className="text-gray-400 text-center">No matches found.</p>
+        )}
+
+        {matches.map((match, i) => (
+          <div
+            key={i}
+            className="p-4 bg-gray-800 rounded-lg shadow flex flex-col"
           >
-            Load More
-          </button>
-        </div>
-      )}
+            <span className="text-sm text-gray-400">
+              {match.league || "Unknown League"}
+            </span>
+            <h2 className="text-lg font-semibold mb-2">
+              {match.home_team} vs {match.away_team}
+            </h2>
+            <p className="text-sm text-gray-300 mb-2">
+              {new Date(match.commence_time).toLocaleString()}
+            </p>
+
+            {match.odds && match.odds.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                {match.odds.map((o, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-gray-700 p-2 rounded text-center"
+                  >
+                    <p className="font-bold">{o.name}</p>
+                    <p>{o.price}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">Odds not available</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
