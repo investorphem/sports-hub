@@ -1,38 +1,23 @@
 export default async function handler(req, res) {
   try {
-    const apiRes = await fetch(
-      `https://api.the-odds-api.com/v4/sports/soccer_epl/odds?regions=eu&oddsFormat=decimal`,
-      {
-        headers: { "X-API-Key": process.env.ODDS_API_KEY },
-      }
-    );
+    const apiKey = process.env.FOOTBALL_API_KEY; // set in Vercel env vars
+    const url = `https://api.football-data.org/v4/matches?status=SCHEDULED,LIVE,IN_PLAY,PAUSED,FINISHED`;
 
-    const data = await apiRes.json();
+    const response = await fetch(url, {
+      headers: { "X-Auth-Token": apiKey },
+    });
 
-    if (!apiRes.ok) {
-      return res
-        .status(apiRes.status)
-        .json({ error: data.message || "Error fetching odds" });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
 
-    const matches =
-      data?.map((game) => ({
-        league: game.sport_title,
-        homeTeam: game.home_team,
-        awayTeam: game.away_team,
-        odds:
-          game.bookmakers?.[0]?.markets?.[0]?.outcomes?.reduce(
-            (acc, outcome) => {
-              acc[outcome.name] = outcome.price;
-              return acc;
-            },
-            {}
-          ) || {},
-      })) || [];
+    const data = await response.json();
 
-    res.status(200).json({ matches });
+    res.status(200).json({
+      matches: data.matches || [],
+    });
   } catch (error) {
-    console.error("API error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching matches:", error);
+    res.status(500).json({ error: "Failed to fetch matches" });
   }
 }
