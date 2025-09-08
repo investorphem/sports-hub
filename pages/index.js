@@ -3,13 +3,13 @@ import { useState } from "react";
 export default function Home() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [leagueFilter, setLeagueFilter] = useState("all");
+  const [tab, setTab] = useState("LIVE"); // default tab
 
-  const fetchMatches = async () => {
+  const loadMatches = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/matchesWithOdds");
-      const data = await res.json();
+      const response = await fetch("/api/matchesWithOdds");
+      const data = await response.json();
       setMatches(data.matches || []);
     } catch (err) {
       console.error("Error fetching matches:", err);
@@ -18,73 +18,58 @@ export default function Home() {
     }
   };
 
-  // Filter matches by league
-  const filteredMatches =
-    leagueFilter === "all"
-      ? matches
-      : matches.filter((m) => m.sport_key === leagueFilter);
-
-  // Extract unique leagues
-  const leagues = [
-    ...new Set(matches.map((m) => m.sport_key || "Unknown League")),
-  ];
+  const filteredMatches = matches.filter((m) => m.status === tab);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
-      <h1 className="text-3xl font-bold text-blue-600 mb-4">⚽ SportsHub</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">⚽ SportsHub Betting</h1>
 
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={fetchMatches}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          {loading ? "Loading..." : "Load Matches"}
-        </button>
-
-        <select
-          value={leagueFilter}
-          onChange={(e) => setLeagueFilter(e.target.value)}
-          className="px-3 py-2 border rounded"
-        >
-          <option value="all">All Leagues</option>
-          {leagues.map((league) => (
-            <option key={league} value={league}>
-              {league}
-            </option>
-          ))}
-        </select>
+      {/* Tabs */}
+      <div className="flex gap-4 mb-4">
+        {["LIVE", "SCHEDULED", "FINISHED"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded ${
+              tab === t ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
+          >
+            {t === "LIVE" && "🔴 Live"}
+            {t === "SCHEDULED" && "⏳ Upcoming"}
+            {t === "FINISHED" && "✅ Finished"}
+          </button>
+        ))}
       </div>
 
-      <div className="w-full max-w-2xl">
-        {filteredMatches.length === 0 && !loading && (
-          <p className="text-center text-gray-600">No matches yet.</p>
-        )}
+      <button
+        onClick={loadMatches}
+        className="px-4 py-2 bg-green-600 text-white rounded mb-4"
+      >
+        {loading ? "Loading..." : "Load Matches"}
+      </button>
 
-        {filteredMatches.map((match, idx) => (
-          <div
-            key={idx}
-            className="bg-white shadow rounded p-4 mb-3 border"
-          >
-            <p className="font-semibold text-gray-800">
-              {match.home_team} vs {match.away_team}
-            </p>
-            <p className="text-sm text-gray-500">
-              League: {match.sport_key || "N/A"}
-            </p>
-            <div className="flex gap-3 mt-2">
-              {match.bookmakers?.[0]?.markets?.[0]?.outcomes?.map(
-                (outcome, i) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 text-sm bg-gray-200 rounded"
-                  >
-                    {outcome.name}: {outcome.price}
-                  </span>
-                )
-              )}
+      {/* Match list */}
+      <div className="space-y-4">
+        {filteredMatches.length === 0 ? (
+          <p>No matches found for {tab}.</p>
+        ) : (
+          filteredMatches.map((match) => (
+            <div
+              key={match.id}
+              className="p-4 border rounded shadow-sm bg-white"
+            >
+              <p className="font-bold">
+                {match.homeTeam.name} vs {match.awayTeam.name}
+              </p>
+              <p>Status: {match.status}</p>
+              <p>
+                {match.utcDate
+                  ? new Date(match.utcDate).toLocaleString()
+                  : "No date"}
+              </p>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
