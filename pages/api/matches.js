@@ -1,37 +1,39 @@
 export default async function handler(req, res) {
-  const { start, end, league } = req.query;
-
-  if (!start || !end) {
-    return res.status(400).json({ error: "Missing start or end date" });
-  }
-
   try {
-    const url = new URL("https://api.the-odds-api.com/v4/sports/soccer/odds");
-    url.searchParams.set("regions", "uk");
-    url.searchParams.set("markets", "h2h");
-    url.searchParams.set("dateFormat", "iso");
-    url.searchParams.set("oddsFormat", "decimal");
-    url.searchParams.set("apiKey", process.env.ODDS_API_KEY);
+    const apiKey = process.env.ODDS_API_KEY; // Put this in Vercel environment
+    const sport = "soccer"; // or use "soccer_epl" for just Premier League
+    const region = "uk"; // regions: uk, us, eu, au
+    const markets = "h2h"; // head-to-head (1X2 betting)
+    const oddsFormat = "decimal"; // decimal odds
+    const dateFormat = "iso";
 
-    // optional league filter
-    if (league && league !== "all") {
-      url.searchParams.set("bookmakers", league);
-    }
+    const response = await fetch(
+      `https://api.the-odds-api.com/v4/sports/${sport}/odds/?regions=${region}&markets=${markets}&oddsFormat=${oddsFormat}&dateFormat=${dateFormat}&apiKey=${apiKey}`
+    );
 
-    const apiRes = await fetch(url.toString());
-
-    if (!apiRes.ok) {
-      const errorData = await apiRes.json();
+    if (!response.ok) {
+      const errorData = await response.text();
       return res
-        .status(apiRes.status)
-        .json({ error: errorData.message || "Failed to fetch matches" });
+        .status(response.status)
+        .json({ error: "Failed to fetch odds", details: errorData });
     }
 
-    const data = await apiRes.json();
+    const data = await response.json();
 
-    res.status(200).json({ matches: data || [] });
+    // Normalize to match structure expected by frontend
+    const matches = data.map((game) => ({
+      id: game.id,
+      utcDate: game.commence_time,
+      competition: { name: game.sport_title },
+      homeTeam: { name: game.home_team },
+      awayTeam: { name: game.away_team },
+      status: new Date(game.commence_time) <= new Date() ? "LIVE" : "UPCOMING",
+      bookmakers: game.bookmakers || [],
+    }));
+
+    res.status(200).json({ matches });
   } catch (error) {
-    console.error("Fetch error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("API error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
