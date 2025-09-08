@@ -1,255 +1,240 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const leagueLogos = {
+  "English Premier League": "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
+  "Spanish La Liga": "https://upload.wikimedia.org/wikipedia/en/7/78/LaLiga_Santander.svg",
+  "UEFA Champions League": "https://upload.wikimedia.org/wikipedia/en/f/f2/UEFA_Champions_League_logo_2.svg",
+  "German Bundesliga": "https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg",
+};
+
+function getLeagueLogo(league) {
+  return leagueLogos[league] || "https://cdn-icons-png.flaticon.com/512/40/40361.png";
+}
+
+function getTeamLogo(teamName) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName)}&background=random&rounded=true`;
+}
 
 export default function Home() {
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [matches, setMatches] = useState({ live: {}, upcoming: {}, past: {} });
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("live");
+  const [selectedLeague, setSelectedLeague] = useState("All");
   const [betSlip, setBetSlip] = useState([]);
-  const [stake, setStake] = useState(0);
   const [betHistory, setBetHistory] = useState([]);
-  const [filter, setFilter] = useState("All");
 
+  // Fetch matches
   useEffect(() => {
+    async function fetchMatches() {
+      try {
+        const res = await fetch("/api/matchesWithOdds");
+        const data = await res.json();
+        setMatches(data);
+      } catch (err) {
+        console.error("Error fetching matches:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMatches();
+  }, []);
+
+  // Load saved bets
+  useEffect(() => {
+    const savedSlip = localStorage.getItem("betSlip");
     const savedHistory = localStorage.getItem("betHistory");
+    if (savedSlip) setBetSlip(JSON.parse(savedSlip));
     if (savedHistory) setBetHistory(JSON.parse(savedHistory));
   }, []);
 
-  const fetchMatches = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/matchesWithOdds");
-      const data = await res.json();
-      setMatches(data.matches || []);
-    } catch (err) {
-      console.error("Error fetching matches:", err);
+  useEffect(() => {
+    localStorage.setItem("betSlip", JSON.stringify(betSlip));
+  }, [betSlip]);
+
+  useEffect(() => {
+    localStorage.setItem("betHistory", JSON.stringify(betHistory));
+  }, [betHistory]);
+
+  function toggleBet(match, outcome) {
+    const betId = `${match.id}-${outcome.name}`;
+    const exists = betSlip.find(b => b.id === betId);
+    if (exists) {
+      setBetSlip(betSlip.filter(b => b.id !== betId));
+    } else {
+      setBetSlip([
+        ...betSlip,
+        {
+          id: betId,
+          match: `${match.home_team} vs ${match.away_team}`,
+          outcome: outcome.name,
+          odds: outcome.price,
+        },
+      ]);
     }
-    setLoading(false);
-  };
+  }
 
-  const addToBetSlip = (match, market, outcome) => {
-    const bet = {
-      matchId: match.id,
-      home: match.home_team,
-      away: match.away_team,
-      league: match.sport_title,
-      market,
-      outcome,
-      odds: outcome.price,
-    };
+  function getTotalOdds() {
+    return betSlip.reduce((acc, b) => acc * (b.odds || 1), 1).toFixed(2);
+  }
 
-    setBetSlip((prev) => [...prev, bet]);
-  };
-
-  const removeFromBetSlip = (index) => {
-    setBetSlip((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const calculateTotalOdds = () =>
-    betSlip.reduce((total, b) => total * b.odds, 1);
-
-  const placeBet = () => {
+  function placeBet() {
     if (betSlip.length === 0) return;
-
-    const newBet = {
-      id: Date.now(),
-      bets: betSlip,
-      stake,
-      odds: calculateTotalOdds(),
-      payout: stake * calculateTotalOdds(),
-      time: new Date().toLocaleString(),
-      status: "Pending",
-    };
-
-    const updatedHistory = [...betHistory, newBet];
-    setBetHistory(updatedHistory);
-    localStorage.setItem("betHistory", JSON.stringify(updatedHistory));
-
+    const newHistory = [
+      ...betHistory,
+      { id: Date.now(), bets: betSlip, totalOdds: getTotalOdds() },
+    ];
+    setBetHistory(newHistory);
     setBetSlip([]);
-    setStake(0);
+  }
 
-    alert("✅ Bet placed successfully!");
-  };
+  const leagues = [
+    "All",
+    ...new Set([
+      ...Object.keys(matches.live),
+      ...Object.keys(matches.upcoming),
+      ...Object.keys(matches.past),
+    ]),
+  ];
 
-  const groupByLeague = (games) => {
-    return games.reduce((groups, game) => {
-      const league = game.sport_title || "Other";
-      if (!groups[league]) groups[league] = [];
-      groups[league].push(game);
-      return groups;
-    }, {});
-  };
+  function renderMatches(group) {
+    if (loading) return <p>Loading matches...</p>;
+    if (!group || Object.keys(group).length === 0) return <p>No matches.</p>;
 
-  const renderMatches = (status) => {
-    const filtered = matches.filter((m) => m.status === status);
-    const grouped = groupByLeague(filtered);
-
-    return Object.keys(grouped).map((league) => (
-      <div key={league} className="mb-6">
-        <h2 className="text-lg font-bold mb-2">{league}</h2>
-        {grouped[league].map((match) => (
-          <div
-            key={match.id}
-            className="border p-3 mb-2 rounded bg-gray-50 shadow"
-          >
-            <p className="font-semibold">
-              {match.home_team} vs {match.away_team}
-            </p>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {match.bookmakers?.[0]?.markets?.[0]?.outcomes?.map((o, i) => (
-                <button
-                  key={i}
-                  onClick={() => addToBetSlip(match, match.bookmakers[0].title, o)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded"
-                >
-                  {o.name} ({o.price})
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    ));
-  };
-
-  const filteredHistory = betHistory.filter((bet) =>
-    filter === "All" ? true : bet.status === filter
-  );
+    return Object.entries(group).map(([league, leagueMatches]) => {
+      if (selectedLeague !== "All" && selectedLeague !== league) return null;
+      return (
+        <div key={league} className="mb-6 pb-20"> {/* extra bottom padding for nav */}
+          <h2 className="text-lg font-bold mb-2 flex items-center gap-2">
+            <img src={getLeagueLogo(league)} alt={league} className="w-6 h-6" />
+            {league}
+          </h2>
+          {leagueMatches.map(match => {
+            const outcomes = match.bookmakers?.[0]?.markets?.[0]?.outcomes || [];
+            return (
+              <div key={match.id} className="border p-3 rounded mb-2 bg-white shadow">
+                <p className="mb-2 font-semibold flex items-center gap-2">
+                  <img src={getTeamLogo(match.home_team)} alt={match.home_team} className="w-6 h-6" />
+                  {match.home_team} vs{" "}
+                  <img src={getTeamLogo(match.away_team)} alt={match.away_team} className="w-6 h-6" />
+                  {match.away_team}
+                </p>
+                <div className="flex gap-2">
+                  {outcomes.map(outcome => {
+                    const betId = `${match.id}-${outcome.name}`;
+                    const isSelected = betSlip.find(b => b.id === betId);
+                    return (
+                      <button
+                        key={betId}
+                        className={`px-3 py-1 rounded ${
+                          isSelected ? "bg-red-500 text-white" : "bg-green-500 text-white"
+                        }`}
+                        onClick={() => toggleBet(match, outcome)}
+                      >
+                        {outcome.name} ({outcome.price})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    });
+  }
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">SportsHub</h1>
-
-      {/* Tabs */}
-      <div className="flex justify-around mb-4">
-        {["upcoming", "live", "finished", "history"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-3 py-2 rounded ${
-              activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200"
-            }`}
+    <div className="max-w-3xl mx-auto p-4 pb-20">
+      {/* League Filter */}
+      {["live", "upcoming", "past"].includes(activeTab) && (
+        <div className="mb-4">
+          <select
+            className="border p-2 rounded"
+            value={selectedLeague}
+            onChange={e => setSelectedLeague(e.target.value)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Load Matches */}
-      {activeTab !== "history" && (
-        <div className="mb-4 text-center">
-          <button
-            onClick={fetchMatches}
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            {loading ? "Loading..." : "Load Matches"}
-          </button>
-        </div>
-      )}
-
-      {/* Tab Content */}
-      {activeTab === "upcoming" && renderMatches("upcoming")}
-      {activeTab === "live" && renderMatches("live")}
-      {activeTab === "finished" && renderMatches("finished")}
-
-      {/* Bet Slip */}
-      {activeTab !== "history" && betSlip.length > 0 && (
-        <div className="border p-4 mt-4 rounded bg-white shadow">
-          <h2 className="text-lg font-bold mb-2">Bet Slip</h2>
-          {betSlip.map((b, i) => (
-            <div
-              key={i}
-              className="flex justify-between items-center border-b py-1"
-            >
-              <span>
-                {b.home} vs {b.away} - {b.outcome.name} ({b.odds})
-              </span>
-              <button
-                onClick={() => removeFromBetSlip(i)}
-                className="text-red-600"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <div className="mt-3">
-            <input
-              type="number"
-              value={stake}
-              onChange={(e) => setStake(Number(e.target.value))}
-              placeholder="Enter stake"
-              className="border p-2 w-full mb-2 rounded"
-            />
-            <p>Total Odds: {calculateTotalOdds().toFixed(2)}</p>
-            <p>
-              Potential Payout: {(stake * calculateTotalOdds()).toFixed(2)}
-            </p>
-            <button
-              onClick={placeBet}
-              className="mt-2 w-full bg-blue-600 text-white py-2 rounded"
-            >
-              Place Bet
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bet History */}
-      {activeTab === "history" && (
-        <div className="mt-4">
-          <h2 className="text-lg font-bold mb-4">Bet History</h2>
-          <div className="mb-4 flex space-x-2">
-            {["All", "Pending", "Won", "Lost"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1 rounded ${
-                  filter === f ? "bg-blue-600 text-white" : "bg-gray-200"
-                }`}
-              >
-                {f}
-              </button>
+            {leagues.map(l => (
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
-          </div>
-          {filteredHistory.length === 0 ? (
-            <p>No bets found.</p>
+          </select>
+        </div>
+      )}
+
+      {/* Content */}
+      {activeTab === "live" && renderMatches(matches.live)}
+      {activeTab === "upcoming" && renderMatches(matches.upcoming)}
+      {activeTab === "past" && renderMatches(matches.past)}
+
+      {activeTab === "betslip" && (
+        <div>
+          <h2 className="text-lg font-bold mb-2">Your Bet Slip</h2>
+          {betSlip.length === 0 ? (
+            <p>No bets added yet.</p>
           ) : (
-            filteredHistory.map((bet) => (
-              <div
-                key={bet.id}
-                className="border p-3 mb-2 rounded bg-gray-50 shadow"
-              >
-                <p>
-                  <strong>Time:</strong> {bet.time}
-                </p>
-                <p>
-                  <strong>Stake:</strong> {bet.stake}
-                </p>
-                <p>
-                  <strong>Total Odds:</strong> {bet.odds.toFixed(2)}
-                </p>
-                <p>
-                  <strong>Potential Payout:</strong>{" "}
-                  {bet.payout.toFixed(2)}
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`${
-                      bet.status === "Won"
-                        ? "text-green-600"
-                        : bet.status === "Lost"
-                        ? "text-red-600"
-                        : "text-yellow-600"
-                    }`}
-                  >
-                    {bet.status}
-                  </span>
-                </p>
-              </div>
-            ))
+            <ul className="mb-4">
+              {betSlip.map(b => (
+                <li key={b.id} className="mb-2">
+                  {b.match} → {b.outcome} @ {b.odds}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="font-bold mb-4">Total Odds: {getTotalOdds()}</p>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={placeBet}
+          >
+            Place Bet
+          </button>
+        </div>
+      )}
+
+      {activeTab === "history" && (
+        <div>
+          <h2 className="text-lg font-bold mb-2">Bet History</h2>
+          {betHistory.length === 0 ? (
+            <p>No bets placed yet.</p>
+          ) : (
+            <ul>
+              {betHistory.map(h => (
+                <li key={h.id} className="border p-3 rounded mb-2 bg-gray-50 shadow">
+                  <p className="font-semibold mb-1">Total Odds: {h.totalOdds}</p>
+                  <ul className="ml-4 list-disc">
+                    {h.bets.map(b => (
+                      <li key={b.id}>
+                        {b.match} → {b.outcome} @ {b.odds}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
+
+      {/* Fixed Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg flex justify-around py-2">
+        {[
+          { key: "live", label: "⚽ Live" },
+          { key: "upcoming", label: "⏳ Upcoming" },
+          { key: "past", label: "📜 Past" },
+          { key: "betslip", label: "🎟️ Slip" },
+          { key: "history", label: "🏦 History" },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            className={`flex-1 py-2 ${
+              activeTab === tab.key ? "text-blue-600 font-bold" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
