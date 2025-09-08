@@ -10,10 +10,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/matchesWithOdds");
       const data = await res.json();
-
-      if (data.matches) {
-        setMatches(data.matches);
-      }
+      setMatches(data.matches || []);
     } catch (err) {
       console.error("Error fetching matches:", err);
     } finally {
@@ -21,66 +18,70 @@ export default function Home() {
     }
   };
 
+  // Filter matches by league
   const filteredMatches =
     leagueFilter === "all"
       ? matches
-      : matches.filter((m) => m.league && m.league === leagueFilter);
+      : matches.filter((m) => m.sport_key === leagueFilter);
 
-  const leagues = [...new Set(matches.map((m) => m.league))];
+  // Extract unique leagues
+  const leagues = [
+    ...new Set(matches.map((m) => m.sport_key || "Unknown League")),
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold text-center mb-6 text-purple-700">
-        Sportshub Betting Miniapp ⚽
-      </h1>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4">
+      <h1 className="text-3xl font-bold text-blue-600 mb-4">⚽ SportsHub</h1>
 
-      <div className="flex justify-center mb-6">
+      <div className="flex gap-2 mb-4">
         <button
           onClick={fetchMatches}
-          disabled={loading}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           {loading ? "Loading..." : "Load Matches"}
         </button>
+
+        <select
+          value={leagueFilter}
+          onChange={(e) => setLeagueFilter(e.target.value)}
+          className="px-3 py-2 border rounded"
+        >
+          <option value="all">All Leagues</option>
+          {leagues.map((league) => (
+            <option key={league} value={league}>
+              {league}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {matches.length > 0 && (
-        <div className="mb-6 flex justify-center">
-          <select
-            value={leagueFilter}
-            onChange={(e) => setLeagueFilter(e.target.value)}
-            className="p-2 border rounded-lg"
-          >
-            <option value="all">All Leagues</option>
-            {leagues.map((league) => (
-              <option key={league} value={league}>
-                {league}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div className="w-full max-w-2xl">
+        {filteredMatches.length === 0 && !loading && (
+          <p className="text-center text-gray-600">No matches yet.</p>
+        )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {filteredMatches.map((match, i) => (
+        {filteredMatches.map((match, idx) => (
           <div
-            key={i}
-            className="bg-white shadow rounded-lg p-4 border hover:shadow-md"
+            key={idx}
+            className="bg-white shadow rounded p-4 mb-3 border"
           >
-            <h2 className="font-bold text-lg text-purple-600 mb-2">
-              {match.homeTeam} vs {match.awayTeam}
-            </h2>
-            <p className="text-sm text-gray-600 mb-2">{match.league}</p>
-            <div className="flex gap-4">
-              {match.odds &&
-                Object.entries(match.odds).map(([team, odd]) => (
-                  <button
-                    key={team}
-                    className="bg-gray-100 px-3 py-1 rounded hover:bg-gray-200"
+            <p className="font-semibold text-gray-800">
+              {match.home_team} vs {match.away_team}
+            </p>
+            <p className="text-sm text-gray-500">
+              League: {match.sport_key || "N/A"}
+            </p>
+            <div className="flex gap-3 mt-2">
+              {match.bookmakers?.[0]?.markets?.[0]?.outcomes?.map(
+                (outcome, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 text-sm bg-gray-200 rounded"
                   >
-                    {team}: {odd}
-                  </button>
-                ))}
+                    {outcome.name}: {outcome.price}
+                  </span>
+                )
+              )}
             </div>
           </div>
         ))}
