@@ -1,5 +1,14 @@
 import "../styles/globals.css";
+import { useEffect } from "react";
+import { sdk } from "@farcaster/mini-apps-sdk";
 
-export default function App({ Component, pageProps }) {
+function MyApp({ Component, pageProps }) {
+  useEffect(() => {
+    // Tell Warpcast the app is ready (removes splash screen)
+    sdk.actions.ready();
+  }, []);
+
   return <Component {...pageProps} />;
 }
+
+export default MyApp;
