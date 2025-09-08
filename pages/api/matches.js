@@ -1,22 +1,37 @@
-// pages/api/matches.js
 export default async function handler(req, res) {
+  const { start, end, league } = req.query;
+
+  if (!start || !end) {
+    return res.status(400).json({ error: "Missing start or end date" });
+  }
+
   try {
-    const sport = "soccer_epl"; // Example: Premier League
-    const region = "uk";        // Regions: us, uk, eu, au
-    const markets = "h2h";      // head-to-head odds
+    const url = new URL("https://api.the-odds-api.com/v4/sports/soccer/odds");
+    url.searchParams.set("regions", "uk");
+    url.searchParams.set("markets", "h2h");
+    url.searchParams.set("dateFormat", "iso");
+    url.searchParams.set("oddsFormat", "decimal");
+    url.searchParams.set("apiKey", process.env.ODDS_API_KEY);
 
-    const response = await fetch(
-      `https://api.the-odds-api.com/v4/sports/${sport}/odds/?regions=${region}&markets=${markets}&apiKey=${process.env.ODDS_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch odds");
+    // optional league filter
+    if (league && league !== "all") {
+      url.searchParams.set("bookmakers", league);
     }
 
-    const data = await response.json();
-    res.status(200).json(data);
+    const apiRes = await fetch(url.toString());
+
+    if (!apiRes.ok) {
+      const errorData = await apiRes.json();
+      return res
+        .status(apiRes.status)
+        .json({ error: errorData.message || "Failed to fetch matches" });
+    }
+
+    const data = await apiRes.json();
+
+    res.status(200).json({ matches: data || [] });
   } catch (error) {
-    console.error("Error fetching matches:", error);
-    res.status(500).json({ error: "Failed to load matches" });
+    console.error("Fetch error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
