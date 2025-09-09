@@ -1,49 +1,43 @@
 // pages/api/matches.js
+import axios from "axios";
+
 export default async function handler(req, res) {
-  const { tab } = req.query;
-  const apiKey = process.env.ODDS_API_KEY;
+  try {
+    const { sport = "soccer", region = "uk", mkt = "h2h" } = req.query;
 
-  const region = "uk"; // adjust if you want us/eu/au
-  const sports = [
-    { key: "soccer_epl", name: "Premier League" },
-    { key: "soccer_spain_la_liga", name: "La Liga" },
-    { key: "soccer_italy_serie_a", name: "Serie A" },
-    { key: "soccer_germany_bundesliga", name: "Bundesliga" },
-    { key: "soccer_france_ligue_one", name: "Ligue 1" },
-    { key: "soccer_uefa_champs_league", name: "Champions League" },
-  ];
+    const response = await axios.get("https://api.the-odds-api.com/v4/sports/soccer/odds", {
+      params: {
+        apiKey: process.env.ODDS_API_KEY,
+        regions: region,
+        markets: mkt,
+        oddsFormat: "decimal",
+        dateFormat: "iso"
+      }
+    });
 
-  let allMatches = [];
+    let matches = response.data || [];
 
-  for (const sport of sports) {
-    let endpoint = "";
-
-    if (tab === "live" || tab === "upcoming") {
-      endpoint = `https://api.the-odds-api.com/v4/sports/${sport.key}/odds/?apiKey=${apiKey}&regions=${region}&markets=h2h&oddsFormat=decimal`;
-    } else if (tab === "past") {
-      endpoint = `https://api.the-odds-api.com/v4/sports/${sport.key}/odds-history/?apiKey=${apiKey}&regions=${region}&markets=h2h&oddsFormat=decimal`;
+    // Basic fuzzy match utility (instead of string-similarity)
+    function isSimilar(str1, str2) {
+      if (!str1 || !str2) return false;
+      str1 = str1.toLowerCase();
+      str2 = str2.toLowerCase();
+      return str1.includes(str2) || str2.includes(str1);
     }
 
-    try {
-      const response = await fetch(endpoint);
-      if (!response.ok) continue; // skip failed sports
-      const data = await response.json();
-
-      const matches =
-        data?.map((m) => ({
-          homeTeam: m.home_team,
-          awayTeam: m.away_team,
-          competition: sport.name,
-          odds: m.bookmakers?.[0]?.markets?.[0]?.outcomes || [],
-        })) || [];
-
-      allMatches = [...allMatches, ...matches];
-    } catch (err) {
-      console.error(`Failed to fetch ${sport.name}:`, err);
+    // Example: filter by league if query param `league` is passed
+    if (req.query.league) {
+      const leagueQuery = req.query.league.toLowerCase();
+      matches = matches.filter((match) =>
+        isSimilar(match.sport_title || "", leagueQuery) ||
+        isSimilar(match.home_team || "", leagueQuery) ||
+        isSimilar(match.away_team || "", leagueQuery)
+      );
     }
+
+    res.status(200).json({ matches });
+  } catch (error) {
+    console.error("Error fetching matches:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to fetch matches" });
   }
-
-  const leagues = [...new Set(allMatches.map((m) => m.competition))];
-
-  res.status(200).json({ matches: allMatches, leagues });
 }
