@@ -2,19 +2,26 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [tab, setTab] = useState("live");
-  const [matches, setMatches] = useState([]); // always array
+  const [matches, setMatches] = useState([]);
   const [leagues, setLeagues] = useState([]);
   const [selectedLeague, setSelectedLeague] = useState("All");
   const [betSlip, setBetSlip] = useState([]);
   const [betHistory, setBetHistory] = useState([]);
+  const [stake, setStake] = useState(100); // default stake
 
   const leagueLogos = {
-    "Premier League": "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
-    "La Liga": "https://upload.wikimedia.org/wikipedia/en/1/13/La_Liga.png",
-    "Serie A": "https://upload.wikimedia.org/wikipedia/en/e/e1/Serie_A_logo_%282019%29.png",
-    "Bundesliga": "https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg",
-    "Ligue 1": "https://upload.wikimedia.org/wikipedia/en/b/ba/Ligue_1_Uber_Eats_logo.png",
-    "Champions League": "https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg",
+    "Premier League":
+      "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
+    "La Liga":
+      "https://upload.wikimedia.org/wikipedia/en/1/13/La_Liga.png",
+    "Serie A":
+      "https://upload.wikimedia.org/wikipedia/en/e/e1/Serie_A_logo_%282019%29.png",
+    "Bundesliga":
+      "https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg",
+    "Ligue 1":
+      "https://upload.wikimedia.org/wikipedia/en/b/ba/Ligue_1_Uber_Eats_logo.png",
+    "Champions League":
+      "https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg",
   };
 
   const getTeamLogo = (teamName) => {
@@ -55,14 +62,27 @@ export default function Home() {
   };
 
   const placeBets = () => {
-    const newHistory = [...betHistory, { bets: betSlip, timestamp: new Date() }];
+    if (betSlip.length === 0) return;
+
+    const newHistory = [
+      ...betHistory,
+      { bets: betSlip, stake, timestamp: new Date() },
+    ];
     setBetHistory(newHistory);
+
     if (typeof window !== "undefined") {
       localStorage.setItem("betHistory", JSON.stringify(newHistory));
       localStorage.removeItem("betSlip");
     }
+
     setBetSlip([]);
   };
+
+  const totalOdds = betSlip.reduce(
+    (acc, b) => acc * (parseFloat(b.selected.price) || 1),
+    1
+  );
+  const potentialPayout = stake * totalOdds;
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
@@ -121,38 +141,62 @@ export default function Home() {
                 <span className="font-bold">{match.competition}</span>
               </div>
 
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center">
-                  <img
-                    src={getTeamLogo(match.homeTeam)}
-                    onError={(e) => (e.target.style.display = "none")}
-                    alt={match.homeTeam}
-                    className="w-6 h-6 mr-2"
-                  />
-                  <span>{match.homeTeam}</span>
-                </div>
-                <span>vs</span>
-                <div className="flex items-center">
-                  <img
-                    src={getTeamLogo(match.awayTeam)}
-                    onError={(e) => (e.target.style.display = "none")}
-                    alt={match.awayTeam}
-                    className="w-6 h-6 mr-2"
-                  />
-                  <span>{match.awayTeam}</span>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                {(match.odds || []).map((o, i) => (
+              {/* Teams + odds in aligned layout */}
+              <div className="grid grid-cols-3 text-center items-center">
+                {/* Home */}
+                <div>
+                  <div className="flex items-center justify-center mb-1">
+                    <img
+                      src={getTeamLogo(match.homeTeam)}
+                      onError={(e) => (e.target.style.display = "none")}
+                      alt={match.homeTeam}
+                      className="w-6 h-6 mr-2"
+                    />
+                    <span>{match.homeTeam}</span>
+                  </div>
                   <button
-                    key={i}
                     className="px-3 py-1 bg-green-500 text-white rounded"
-                    onClick={() => addToSlip(match, o)}
+                    onClick={() =>
+                      addToSlip(match, match.odds?.find((o) => o.name === "Home"))
+                    }
                   >
-                    {o.name}: {o.price}
+                    {match.odds?.find((o) => o.name === "Home")?.price || "-"}
                   </button>
-                ))}
+                </div>
+
+                {/* Draw */}
+                <div>
+                  <div className="mb-1">Draw</div>
+                  <button
+                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                    onClick={() =>
+                      addToSlip(match, match.odds?.find((o) => o.name === "Draw"))
+                    }
+                  >
+                    {match.odds?.find((o) => o.name === "Draw")?.price || "-"}
+                  </button>
+                </div>
+
+                {/* Away */}
+                <div>
+                  <div className="flex items-center justify-center mb-1">
+                    <img
+                      src={getTeamLogo(match.awayTeam)}
+                      onError={(e) => (e.target.style.display = "none")}
+                      alt={match.awayTeam}
+                      className="w-6 h-6 mr-2"
+                    />
+                    <span>{match.awayTeam}</span>
+                  </div>
+                  <button
+                    className="px-3 py-1 bg-red-500 text-white rounded"
+                    onClick={() =>
+                      addToSlip(match, match.odds?.find((o) => o.name === "Away"))
+                    }
+                  >
+                    {match.odds?.find((o) => o.name === "Away")?.price || "-"}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -166,10 +210,13 @@ export default function Home() {
               <p className="text-sm text-gray-500">
                 {new Date(entry.timestamp).toLocaleString()}
               </p>
+              <p className="text-sm">
+                Stake: <strong>${entry.stake}</strong>
+              </p>
               {entry.bets.map((b, j) => (
                 <p key={j}>
                   {b.homeTeam} vs {b.awayTeam} —{" "}
-                  <strong>{b.selected.name}</strong> @ {b.selected.price}
+                  <strong>{b.selected?.name}</strong> @ {b.selected?.price}
                 </p>
               ))}
             </div>
@@ -184,9 +231,24 @@ export default function Home() {
           {betSlip.map((b, i) => (
             <p key={i}>
               {b.homeTeam} vs {b.awayTeam} —{" "}
-              <strong>{b.selected.name}</strong> @ {b.selected.price}
+              <strong>{b.selected?.name}</strong> @ {b.selected?.price}
             </p>
           ))}
+          <div className="mt-2">
+            <label className="mr-2">Stake ($):</label>
+            <input
+              type="number"
+              value={stake}
+              onChange={(e) => setStake(parseFloat(e.target.value) || 0)}
+              className="border p-1 w-24"
+            />
+          </div>
+          <p className="mt-2">
+            Total Odds: <strong>{totalOdds.toFixed(2)}</strong>
+          </p>
+          <p>
+            Potential Payout: <strong>${potentialPayout.toFixed(2)}</strong>
+          </p>
           <button
             className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
             onClick={placeBets}
