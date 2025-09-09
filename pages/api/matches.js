@@ -1,39 +1,49 @@
+// pages/api/matches.js
 export default async function handler(req, res) {
-  try {
-    const apiKey = process.env.ODDS_API_KEY; // Put this in Vercel environment
-    const sport = "soccer"; // or use "soccer_epl" for just Premier League
-    const region = "uk"; // regions: uk, us, eu, au
-    const markets = "h2h"; // head-to-head (1X2 betting)
-    const oddsFormat = "decimal"; // decimal odds
-    const dateFormat = "iso";
+  const { tab } = req.query;
+  const apiKey = process.env.ODDS_API_KEY;
 
-    const response = await fetch(
-      `https://api.the-odds-api.com/v4/sports/${sport}/odds/?regions=${region}&markets=${markets}&oddsFormat=${oddsFormat}&dateFormat=${dateFormat}&apiKey=${apiKey}`
-    );
+  const region = "uk"; // adjust if you want us/eu/au
+  const sports = [
+    { key: "soccer_epl", name: "Premier League" },
+    { key: "soccer_spain_la_liga", name: "La Liga" },
+    { key: "soccer_italy_serie_a", name: "Serie A" },
+    { key: "soccer_germany_bundesliga", name: "Bundesliga" },
+    { key: "soccer_france_ligue_one", name: "Ligue 1" },
+    { key: "soccer_uefa_champs_league", name: "Champions League" },
+  ];
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      return res
-        .status(response.status)
-        .json({ error: "Failed to fetch odds", details: errorData });
+  let allMatches = [];
+
+  for (const sport of sports) {
+    let endpoint = "";
+
+    if (tab === "live" || tab === "upcoming") {
+      endpoint = `https://api.the-odds-api.com/v4/sports/${sport.key}/odds/?apiKey=${apiKey}&regions=${region}&markets=h2h&oddsFormat=decimal`;
+    } else if (tab === "past") {
+      endpoint = `https://api.the-odds-api.com/v4/sports/${sport.key}/odds-history/?apiKey=${apiKey}&regions=${region}&markets=h2h&oddsFormat=decimal`;
     }
 
-    const data = await response.json();
+    try {
+      const response = await fetch(endpoint);
+      if (!response.ok) continue; // skip failed sports
+      const data = await response.json();
 
-    // Normalize to match structure expected by frontend
-    const matches = data.map((game) => ({
-      id: game.id,
-      utcDate: game.commence_time,
-      competition: { name: game.sport_title },
-      homeTeam: { name: game.home_team },
-      awayTeam: { name: game.away_team },
-      status: new Date(game.commence_time) <= new Date() ? "LIVE" : "UPCOMING",
-      bookmakers: game.bookmakers || [],
-    }));
+      const matches =
+        data?.map((m) => ({
+          homeTeam: m.home_team,
+          awayTeam: m.away_team,
+          competition: sport.name,
+          odds: m.bookmakers?.[0]?.markets?.[0]?.outcomes || [],
+        })) || [];
 
-    res.status(200).json({ matches });
-  } catch (error) {
-    console.error("API error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+      allMatches = [...allMatches, ...matches];
+    } catch (err) {
+      console.error(`Failed to fetch ${sport.name}:`, err);
+    }
   }
+
+  const leagues = [...new Set(allMatches.map((m) => m.competition))];
+
+  res.status(200).json({ matches: allMatches, leagues });
 }
