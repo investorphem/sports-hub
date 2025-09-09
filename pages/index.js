@@ -1,262 +1,251 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function Home() {
-  const [tab, setTab] = useState("live");
   const [matches, setMatches] = useState([]);
-  const [leagues, setLeagues] = useState([]);
-  const [selectedLeague, setSelectedLeague] = useState("All");
+  const [loading, setLoading] = useState(true);
   const [betSlip, setBetSlip] = useState([]);
   const [betHistory, setBetHistory] = useState([]);
-  const [stake, setStake] = useState(100); // default stake
-
-  const leagueLogos = {
-    "Premier League":
-      "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
-    "La Liga":
-      "https://upload.wikimedia.org/wikipedia/en/1/13/La_Liga.png",
-    "Serie A":
-      "https://upload.wikimedia.org/wikipedia/en/e/e1/Serie_A_logo_%282019%29.png",
-    "Bundesliga":
-      "https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg",
-    "Ligue 1":
-      "https://upload.wikimedia.org/wikipedia/en/b/ba/Ligue_1_Uber_Eats_logo.png",
-    "Champions League":
-      "https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg",
-  };
-
-  const getTeamLogo = (teamName) => {
-    if (!teamName) return "";
-    const domain = teamName.replace(/\s+/g, "").toLowerCase() + ".com";
-    return `https://logo.clearbit.com/${domain}`;
-  };
 
   useEffect(() => {
-    loadMatches(tab);
+    const fetchMatches = async () => {
+      try {
+        const res = await axios.get("/api/matches");
+        setMatches(res.data || []);
+      } catch (err) {
+        console.error("Error fetching matches:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMatches();
+  }, []);
 
-    if (typeof window !== "undefined") {
-      const savedSlip = localStorage.getItem("betSlip");
-      const savedHistory = localStorage.getItem("betHistory");
-      if (savedSlip) setBetSlip(JSON.parse(savedSlip));
-      if (savedHistory) setBetHistory(JSON.parse(savedHistory));
+  // Save slip in localStorage
+  useEffect(() => {
+    if (betSlip.length > 0) {
+      localStorage.setItem("betSlip", JSON.stringify(betSlip));
     }
-  }, [tab]);
+  }, [betSlip]);
 
-  const loadMatches = async (currentTab) => {
-    try {
-      const response = await fetch(`/api/matches?tab=${currentTab}`);
-      const data = await response.json();
-      setMatches(Array.isArray(data.matches) ? data.matches : []);
-      setLeagues(["All", ...(data.leagues || [])]);
-    } catch (err) {
-      console.error("Error fetching matches:", err);
-      setMatches([]);
-    }
+  // Load saved slip
+  useEffect(() => {
+    const savedSlip = localStorage.getItem("betSlip");
+    if (savedSlip) setBetSlip(JSON.parse(savedSlip));
+  }, []);
+
+  const handleSelectBet = (match, outcome, odd) => {
+    if (!odd) return;
+
+    // Remove previous selection for this match (no duplicate bets)
+    const updatedSlip = betSlip.filter((b) => b.id !== match.id);
+
+    // Add new bet
+    updatedSlip.push({
+      id: match.id,
+      teams: `${match.home_team} vs ${match.away_team}`,
+      outcome,
+      odd,
+    });
+
+    setBetSlip(updatedSlip);
   };
 
-  const addToSlip = (match, outcome) => {
-    const newSlip = [...betSlip, { ...match, selected: outcome }];
-    setBetSlip(newSlip);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("betSlip", JSON.stringify(newSlip));
-    }
-  };
-
-  const placeBets = () => {
+  const placeBet = () => {
     if (betSlip.length === 0) return;
 
-    const newHistory = [
-      ...betHistory,
-      { bets: betSlip, stake, timestamp: new Date() },
-    ];
-    setBetHistory(newHistory);
+    const totalOdds = betSlip.reduce((acc, bet) => acc * bet.odd, 1);
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("betHistory", JSON.stringify(newHistory));
-      localStorage.removeItem("betSlip");
-    }
+    const newBet = {
+      id: Date.now(),
+      selections: [...betSlip],
+      totalOdds,
+      payout: (10 * totalOdds).toFixed(2), // assume stake = 10
+      time: new Date().toLocaleString(),
+    };
 
+    setBetHistory([newBet, ...betHistory]);
     setBetSlip([]);
+    localStorage.removeItem("betSlip");
   };
 
-  const totalOdds = betSlip.reduce(
-    (acc, b) => acc * (parseFloat(b.selected.price) || 1),
-    1
-  );
-  const potentialPayout = stake * totalOdds;
+  // Team logo fallback
+  const getTeamLogo = (team) =>
+    `https://api.logoapi.com/football/${encodeURIComponent(team)}.png`;
+
+  const handleImageError = (e) => {
+    e.target.src = "/default-logo.png";
+  };
+
+  // League logo fallback
+  const getLeagueLogo = (league) =>
+    `https://api.logoapi.com/leagues/${encodeURIComponent(league)}.png`;
+
+  const handleLeagueError = (e) => {
+    e.target.src = "/default-league.png";
+  };
+
+  // Group matches by league
+  const groupedMatches = matches.reduce((groups, match) => {
+    const league = match.league || "Other";
+    if (!groups[league]) groups[league] = [];
+    groups[league].push(match);
+    return groups;
+  }, {});
+
+  if (loading) return <p className="text-center mt-10">Loading matches...</p>;
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      {/* Tabs */}
-      <div className="flex justify-around mb-4">
-        {["live", "upcoming", "past", "betHistory"].map((t) => (
-          <button
-            key={t}
-            className={`px-3 py-2 rounded ${
-              tab === t ? "bg-blue-600 text-white" : "bg-gray-200"
-            }`}
-            onClick={() => setTab(t)}
-          >
-            {t === "live" && "⚽ Live"}
-            {t === "upcoming" && "⏳ Upcoming"}
-            {t === "past" && "📜 Past"}
-            {t === "betHistory" && "📝 Bet History"}
-          </button>
-        ))}
-      </div>
+    <div className="p-4">
+      <h1 className="text-xl font-bold text-center mb-6">⚽ SportsHub Betting</h1>
 
-      {/* League Filter */}
-      {tab !== "betHistory" && leagues.length > 0 && (
-        <div className="mb-4">
-          <label className="mr-2">Filter by League:</label>
-          <select
-            value={selectedLeague}
-            onChange={(e) => setSelectedLeague(e.target.value)}
-            className="p-2 border rounded"
-          >
-            {leagues.map((league) => (
-              <option key={league} value={league}>
-                {league}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* Matches grouped by league */}
+      {Object.entries(groupedMatches).map(([league, leagueMatches]) => (
+        <div key={league} className="mb-8">
+          {/* League header */}
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src={getLeagueLogo(league)}
+              alt={league}
+              onError={handleLeagueError}
+              className="w-8 h-8"
+            />
+            <h2 className="text-lg font-semibold">{league}</h2>
+          </div>
 
-      {/* Matches */}
-      {tab !== "betHistory" &&
-        matches
-          .filter(
-            (m) => selectedLeague === "All" || m.competition === selectedLeague
-          )
-          .map((match, idx) => (
-            <div key={idx} className="mb-4 p-3 border rounded shadow">
-              <div className="flex items-center mb-2">
-                {leagueLogos[match.competition] && (
-                  <img
-                    src={leagueLogos[match.competition]}
-                    alt={match.competition}
-                    className="w-6 h-6 mr-2"
-                  />
-                )}
-                <span className="font-bold">{match.competition}</span>
-              </div>
+          {/* League matches */}
+          <div className="space-y-6">
+            {leagueMatches.map((match) => {
+              const homeOdd =
+                match.bookmakers?.[0]?.markets?.[0]?.outcomes?.find(
+                  (o) => o.name === match.home_team
+                )?.price;
 
-              {/* Teams + odds in aligned layout */}
-              <div className="grid grid-cols-3 text-center items-center">
-                {/* Home */}
-                <div>
-                  <div className="flex items-center justify-center mb-1">
-                    <img
-                      src={getTeamLogo(match.homeTeam)}
-                      onError={(e) => (e.target.style.display = "none")}
-                      alt={match.homeTeam}
-                      className="w-6 h-6 mr-2"
-                    />
-                    <span>{match.homeTeam}</span>
+              const awayOdd =
+                match.bookmakers?.[0]?.markets?.[0]?.outcomes?.find(
+                  (o) => o.name === match.away_team
+                )?.price;
+
+              const drawOdd =
+                match.bookmakers?.[0]?.markets?.[0]?.outcomes?.find(
+                  (o) => o.name === "Draw"
+                )?.price;
+
+              return (
+                <div key={match.id} className="p-4 border rounded shadow">
+                  {/* Match header */}
+                  <div className="flex items-center justify-center gap-4 mb-2">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={getTeamLogo(match.home_team)}
+                        alt={match.home_team}
+                        onError={handleImageError}
+                        className="w-6 h-6"
+                      />
+                      <span className="font-semibold">{match.home_team}</span>
+                    </div>
+                    <span className="text-gray-500">vs</span>
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={getTeamLogo(match.away_team)}
+                        alt={match.away_team}
+                        onError={handleImageError}
+                        className="w-6 h-6"
+                      />
+                      <span className="font-semibold">{match.away_team}</span>
+                    </div>
                   </div>
-                  <button
-                    className="px-3 py-1 bg-green-500 text-white rounded"
-                    onClick={() =>
-                      addToSlip(match, match.odds?.find((o) => o.name === "Home"))
-                    }
-                  >
-                    {match.odds?.find((o) => o.name === "Home")?.price || "-"}
-                  </button>
-                </div>
 
-                {/* Draw */}
-                <div>
-                  <div className="mb-1">Draw</div>
-                  <button
-                    className="px-3 py-1 bg-yellow-500 text-white rounded"
-                    onClick={() =>
-                      addToSlip(match, match.odds?.find((o) => o.name === "Draw"))
-                    }
-                  >
-                    {match.odds?.find((o) => o.name === "Draw")?.price || "-"}
-                  </button>
-                </div>
+                  {/* Odds buttons aligned under teams */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <button
+                      className={`p-2 rounded ${
+                        betSlip.find(
+                          (b) => b.id === match.id && b.outcome === "Home"
+                        )
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleSelectBet(match, "Home", homeOdd)}
+                    >
+                      {homeOdd || "-"} <br /> Home
+                    </button>
 
-                {/* Away */}
-                <div>
-                  <div className="flex items-center justify-center mb-1">
-                    <img
-                      src={getTeamLogo(match.awayTeam)}
-                      onError={(e) => (e.target.style.display = "none")}
-                      alt={match.awayTeam}
-                      className="w-6 h-6 mr-2"
-                    />
-                    <span>{match.awayTeam}</span>
+                    <button
+                      className={`p-2 rounded ${
+                        betSlip.find(
+                          (b) => b.id === match.id && b.outcome === "Draw"
+                        )
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleSelectBet(match, "Draw", drawOdd)}
+                    >
+                      {drawOdd || "-"} <br /> Draw
+                    </button>
+
+                    <button
+                      className={`p-2 rounded ${
+                        betSlip.find(
+                          (b) => b.id === match.id && b.outcome === "Away"
+                        )
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-200"
+                      }`}
+                      onClick={() => handleSelectBet(match, "Away", awayOdd)}
+                    >
+                      {awayOdd || "-"} <br /> Away
+                    </button>
                   </div>
-                  <button
-                    className="px-3 py-1 bg-red-500 text-white rounded"
-                    onClick={() =>
-                      addToSlip(match, match.odds?.find((o) => o.name === "Away"))
-                    }
-                  >
-                    {match.odds?.find((o) => o.name === "Away")?.price || "-"}
-                  </button>
                 </div>
-              </div>
-            </div>
-          ))}
-
-      {/* Bet History */}
-      {tab === "betHistory" && (
-        <div>
-          {betHistory.length === 0 && <p>No bets placed yet.</p>}
-          {betHistory.map((entry, i) => (
-            <div key={i} className="mb-3 p-3 border rounded">
-              <p className="text-sm text-gray-500">
-                {new Date(entry.timestamp).toLocaleString()}
-              </p>
-              <p className="text-sm">
-                Stake: <strong>${entry.stake}</strong>
-              </p>
-              {entry.bets.map((b, j) => (
-                <p key={j}>
-                  {b.homeTeam} vs {b.awayTeam} —{" "}
-                  <strong>{b.selected?.name}</strong> @ {b.selected?.price}
-                </p>
-              ))}
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
-      )}
+      ))}
 
       {/* Bet Slip */}
-      {tab !== "betHistory" && betSlip.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg">
-          <h3 className="font-bold mb-2">Your Bet Slip</h3>
-          {betSlip.map((b, i) => (
-            <p key={i}>
-              {b.homeTeam} vs {b.awayTeam} —{" "}
-              <strong>{b.selected?.name}</strong> @ {b.selected?.price}
-            </p>
-          ))}
-          <div className="mt-2">
-            <label className="mr-2">Stake ($):</label>
-            <input
-              type="number"
-              value={stake}
-              onChange={(e) => setStake(parseFloat(e.target.value) || 0)}
-              className="border p-1 w-24"
-            />
-          </div>
-          <p className="mt-2">
-            Total Odds: <strong>{totalOdds.toFixed(2)}</strong>
-          </p>
-          <p>
-            Potential Payout: <strong>${potentialPayout.toFixed(2)}</strong>
-          </p>
-          <button
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
-            onClick={placeBets}
-          >
-            Place Bets
-          </button>
-        </div>
-      )}
+      <div className="mt-6 p-4 border rounded shadow">
+        <h2 className="font-bold mb-2">🧾 Bet Slip</h2>
+        {betSlip.length === 0 ? (
+          <p>No selections yet.</p>
+        ) : (
+          <>
+            {betSlip.map((bet) => (
+              <p key={bet.id}>
+                {bet.teams} — {bet.outcome} @ {bet.odd}
+              </p>
+            ))}
+            <button
+              onClick={placeBet}
+              className="mt-3 w-full bg-blue-600 text-white p-2 rounded"
+            >
+              Place Bet
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Bet History */}
+      <div className="mt-6 p-4 border rounded shadow">
+        <h2 className="font-bold mb-2">📜 Bet History</h2>
+        {betHistory.length === 0 ? (
+          <p>No bets placed yet.</p>
+        ) : (
+          betHistory.map((bet) => (
+            <div key={bet.id} className="border-b py-2">
+              <p className="font-semibold">
+                {bet.selections
+                  .map((s) => `${s.teams} (${s.outcome})`)
+                  .join(", ")}
+              </p>
+              <p>Total Odds: {bet.totalOdds.toFixed(2)}</p>
+              <p>Payout: {bet.payout}</p>
+              <p className="text-sm text-gray-500">{bet.time}</p>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
