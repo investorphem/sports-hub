@@ -1,15 +1,13 @@
-// pages/index.js
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const [tab, setTab] = useState("live");
-  const [matches, setMatches] = useState([]);
+  const [matches, setMatches] = useState([]); // always array
   const [leagues, setLeagues] = useState([]);
   const [selectedLeague, setSelectedLeague] = useState("All");
   const [betSlip, setBetSlip] = useState([]);
   const [betHistory, setBetHistory] = useState([]);
 
-  // league logos
   const leagueLogos = {
     "Premier League": "https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg",
     "La Liga": "https://upload.wikimedia.org/wikipedia/en/1/13/La_Liga.png",
@@ -19,43 +17,51 @@ export default function Home() {
     "Champions League": "https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2.svg",
   };
 
-  // helper to guess team logo
   const getTeamLogo = (teamName) => {
+    if (!teamName) return "";
     const domain = teamName.replace(/\s+/g, "").toLowerCase() + ".com";
     return `https://logo.clearbit.com/${domain}`;
   };
 
   useEffect(() => {
     loadMatches(tab);
-    const savedSlip = localStorage.getItem("betSlip");
-    const savedHistory = localStorage.getItem("betHistory");
-    if (savedSlip) setBetSlip(JSON.parse(savedSlip));
-    if (savedHistory) setBetHistory(JSON.parse(savedHistory));
+
+    if (typeof window !== "undefined") {
+      const savedSlip = localStorage.getItem("betSlip");
+      const savedHistory = localStorage.getItem("betHistory");
+      if (savedSlip) setBetSlip(JSON.parse(savedSlip));
+      if (savedHistory) setBetHistory(JSON.parse(savedHistory));
+    }
   }, [tab]);
 
   const loadMatches = async (currentTab) => {
     try {
       const response = await fetch(`/api/matches?tab=${currentTab}`);
       const data = await response.json();
-      setMatches(data.matches);
-      setLeagues(["All", ...data.leagues]);
+      setMatches(Array.isArray(data.matches) ? data.matches : []);
+      setLeagues(["All", ...(data.leagues || [])]);
     } catch (err) {
       console.error("Error fetching matches:", err);
+      setMatches([]);
     }
   };
 
   const addToSlip = (match, outcome) => {
     const newSlip = [...betSlip, { ...match, selected: outcome }];
     setBetSlip(newSlip);
-    localStorage.setItem("betSlip", JSON.stringify(newSlip));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("betSlip", JSON.stringify(newSlip));
+    }
   };
 
   const placeBets = () => {
     const newHistory = [...betHistory, { bets: betSlip, timestamp: new Date() }];
     setBetHistory(newHistory);
-    localStorage.setItem("betHistory", JSON.stringify(newHistory));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("betHistory", JSON.stringify(newHistory));
+      localStorage.removeItem("betSlip");
+    }
     setBetSlip([]);
-    localStorage.removeItem("betSlip");
   };
 
   return (
@@ -79,7 +85,7 @@ export default function Home() {
       </div>
 
       {/* League Filter */}
-      {tab !== "betHistory" && (
+      {tab !== "betHistory" && leagues.length > 0 && (
         <div className="mb-4">
           <label className="mr-2">Filter by League:</label>
           <select
@@ -104,7 +110,6 @@ export default function Home() {
           )
           .map((match, idx) => (
             <div key={idx} className="mb-4 p-3 border rounded shadow">
-              {/* League */}
               <div className="flex items-center mb-2">
                 {leagueLogos[match.competition] && (
                   <img
@@ -116,7 +121,6 @@ export default function Home() {
                 <span className="font-bold">{match.competition}</span>
               </div>
 
-              {/* Teams with logos */}
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center">
                   <img
@@ -139,9 +143,8 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Odds */}
               <div className="flex space-x-2">
-                {match.odds.map((o, i) => (
+                {(match.odds || []).map((o, i) => (
                   <button
                     key={i}
                     className="px-3 py-1 bg-green-500 text-white rounded"
