@@ -1,0 +1,42 @@
+name: Deploy Contracts to Base (via Hardhat)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with: node-version: 20
+
+      - name: Install dependencies (root)
+        run: npm install --legacy-peer-deps
+
+      - name: Install frontend deps (optional)
+        run: |
+          cd frontend
+          npm install --legacy-peer-deps
+
+      - name: Deploy contracts
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+          USDC_ADDRESS: ${{ secrets.USDC_ADDRESS }}
+        run: |
+          npx hardhat run scripts/deploy.js --network ${{
+            secrets.DEPLOY_NETWORK || 'baseGoerli'
+          }}
+
+      - name: Commit frontend .env.local
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend/.env.local || true
+          git commit -m "chore: add deployed contract addresses" || true
+          git push origin HEAD:main || true
