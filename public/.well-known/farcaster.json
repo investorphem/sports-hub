@@ -9,7 +9,7 @@
     "splashImageUrl": "https://sports-hub-three.vercel.app/splash.png",
     "splashBackgroundColor": "#4B0082",
     "webhookUrl": "https://sports-hub-three.vercel.app/api/webhook",
-    "subtitle": "Live football scores,fixtures",
+    "subtitle": "Live football scores, fixtures",
     "description": "Premier League and Championship scores with date filters",
     "primaryCategory": "games",
     "screenshotUrls": [
@@ -31,7 +31,8 @@
   "accountAssociation": {
     "header": "eyJmaWQiOjIxOTA1OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEQ2OEYyMjZCQjY5ZTk4MmI3N0I0QTYxYUEwMmZhMzdhMjJCQUU2MDgifQ",
     "payload": "eyJkb21haW4iOiJzcG9ydHMtaHViLXRocmVlLnZlcmNlbC5hcHAifQ",
-    "signature": "MHgwNzc3MjBhMjcwNjY0MWEyNDNlNTM2YzgxYzNmZDU5YjgwYWJiZmJiNGIxNTMxZWU3ZDk1N2IzYWQzMmM3ZTIyNWJkMTIzZDMwNmRhOTcxZjE2NzdiZmMzMjY3NmFjZWUzZmY1OTdjNWFmY2EyODk2MTg4ZmRkOWRkMjVkNWU5YzFi",
+    "signature": "MHgwNzc3MjBhMjcwNjY0MWEyNDNlNTM2YzgxYzNmZDU5YjgwYWJiZmJiNGIxNTMxZWU3ZDk1N2IzYWQzMmM3ZTIyNWJkMTIzZDMwNmRhOTcxZjE2NzdiZmMzMjY3NmFjZWUzZmY1OTdjNWFmY2EyODk2MTg4ZmRkOWRkMjVkNWU5YzFi"
+  },
   "baseBuilder": {
     "allowedAddresses": ["0x3c124419324680A3557F1741c1ed18e2154691b5"]
   }
